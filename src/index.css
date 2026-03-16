@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+:root {
+  /* ... Giữ nguyên các biến root của bạn ... */
+  --bg: #fff;
+  --text: #6b6375;
+  /* ... */
+}
+
+/* XÓA BỎ HOẶC SỬA LẠI ĐOẠN NÀY */
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#root {
+  /* SỬA THÀNH 100% ĐỂ TRÀN MÀN HÌNH */
+  width: 100%; 
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  
+  /* XÓA DÒNG NÀY (Nó tạo ra 2 cái vạch kẻ ở 2 bên) */
+  /* border-inline: 1px solid var(--border); */ 
+  
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+/* Đảm bảo không có gì căn giữa cưỡng ép */
+main {
+  width: 100%;
+  flex: 1;
+}

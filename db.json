@@ -1,0 +1,23 @@
+{
+  "requestOtps": [],
+  "users": [
+    {
+      "id": 1773638084415,
+      "fullName": "Nguyễn Hoàng Hiệp",
+      "phone": "0983149689",
+      "email": "htthvip@gmail.com",
+      "address": "123 Đường Lê Trọng Tấn, Hà Nội",
+      "gender": "MALE",
+      "password": "1512005"
+    },
+    {
+      "id": 1773670413203,
+      "fullName": "Nguyễn Hoàng Hiệp",
+      "phone": "0983149680",
+      "email": "htthvip@gmail.com",
+      "address": "Giải phóng",
+      "gender": "FEMALE",
+      "password": "1512005"
+    }
+  ]
+}
