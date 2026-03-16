@@ -1,0 +1,4 @@
+{
+  "/api/v1/auth/register/request-otp": "/request-otp",
+  "/api/v1/auth/register/verify-otp": "/users"
+}
