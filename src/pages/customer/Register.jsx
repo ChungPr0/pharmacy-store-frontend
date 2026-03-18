@@ -152,7 +152,7 @@ const Register = () => {
       <Toaster />
       
       <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 sticky top-0 h-screen bg-white">
-        <img src={IMAGES.LOGO_DANG_KY} alt="Pharmacy" className="max-w-lg w-full h-auto object-contain" />
+        <img src={IMAGES.LOGO_DK} alt="Pharmacy" className="max-w-lg w-full h-auto object-contain" />
       </div>
 
       <div className="w-full md:w-1/2 bg-[#f1f8f1] flex flex-col items-center py-6 px-6 md:px-12">
