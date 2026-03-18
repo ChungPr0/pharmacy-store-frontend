@@ -1,20 +1,24 @@
-// src/constants/images.js
 
-// 1. Đối với ảnh trong PUBLIC: Gọi trực tiếp bằng chuỗi đường dẫn (string)
-const PUBLIC_URL = '/img';
+import logo_dk from '../assets/register/logo_dangky.jpg';
+import logo from '../assets/home/logo_ThaiDuong.png';
+import banner from '../assets/home/Banner.jpg';
+import safety from '../assets/home/content_mua_sam_an_toan.jpg';
 
-// 2. Đối với ảnh trong ASSETS: Phải IMPORT để Vite xử lý
-// import heroImg from '../assets/hero.png';
-// import reactLogo from '../assets/react.svg';
-// import viteLogo from '../assets/vite.svg';
+import ncs from '../assets/home/NCS.png';
+import momo from '../assets/home/MOMO.png';
+import dmca from '../assets/home/DMCA.png';
+import napas from '../assets/home/napas.png';
+import bct from '../assets/home/bo_cong_thuong.png';
 
 export const IMAGES = {
-  // Ảnh tĩnh (Public)
-  LOGO_DANG_KY: `${PUBLIC_URL}/logo_dangky.jpg`,
+  LOGO_MAIN: logo,
+  LOGO_DK: logo_dk,
+  BANNER_HERO: banner,
+  SAFETY_BANNER: safety,
   
-
-  // Ảnh UI (Assets)
-//   HERO: heroImg,
-//   REACT: reactLogo,
-//   VITE: viteLogo,
+  NCS: ncs,
+  MOMO: momo,
+  DMCA: dmca,
+  NAPAS: napas,
+  BO_CONG_THUONG: bct,
 };
