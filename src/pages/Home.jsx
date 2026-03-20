@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../api/axios";
 import ProductCard from "../components/ProductCard";
+import Header from "../components/Header";
 
 const Home = () => {
 
@@ -12,7 +13,6 @@ const Home = () => {
 
     const fetchHomeData = async () => {
       try {
-
         const catRes = await api.get("/categories/tree");
         const bestRes = await api.get("/products/best-sellers?limit=8");
         const latestRes = await api.get("/products/latest?limit=8");
@@ -31,71 +31,86 @@ const Home = () => {
   }, []);
 
   return (
-    <div className="space-y-10">
+    <div className="bg-[#F5F7F6] min-h-screen">
 
-      {/* CATEGORY */}
-      <section>
+      {/* HEADER */}
+      <Header />
 
-        <h2 className="text-xl font-bold mb-4">
-          Danh mục
-        </h2>
-
-        <div className="grid grid-cols-4 gap-4">
-
-          {categories.map((cat) => (
-            <div
-              key={cat.id}
-              className="bg-white p-4 rounded-lg shadow text-center"
-            >
-              {cat.name}
-            </div>
-          ))}
-
+      {/* HERO BANNER */}
+      <div className="bg-primary py-10">
+        <div className="max-w-[1200px] mx-auto px-4 text-white">
+          <h1 className="text-3xl font-bold mb-2">
+            NHÀ THUỐC THÁI DƯƠNG
+          </h1>
+          <p>100% sản phẩm đạt chuẩn GPP</p>
         </div>
+      </div>
 
-      </section>
+      <div className="max-w-[1200px] mx-auto px-4 py-10 space-y-10">
 
-      {/* BEST SELLER */}
+        {/* CATEGORY */}
+        <section>
 
-      <section>
+          <h2 className="text-xl font-bold mb-4">
+            Danh mục
+          </h2>
 
-        <h2 className="text-xl font-bold mb-4 text-green-600">
-          Sản phẩm bán chạy
-        </h2>
+          <div className="grid grid-cols-4 gap-4">
 
-        <div className="grid grid-cols-4 gap-4">
+            {categories.map((cat) => (
+              <div
+                key={cat.id}
+                className="bg-white p-4 rounded-xl shadow text-center hover:shadow-md transition"
+              >
+                {cat.name}
+              </div>
+            ))}
 
-          {bestSellers.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
+          </div>
 
-        </div>
+        </section>
 
-      </section>
+        {/* BEST SELLER */}
+        <section>
 
-      {/* LATEST PRODUCTS */}
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-green-600">
+            🔥 SẢN PHẨM BÁN CHẠY
+          </h2>
 
-      <section>
+          <div className="grid grid-cols-4 gap-6">
 
-        <h2 className="text-xl font-bold mb-4 text-green-600">
-          Sản phẩm mới
-        </h2>
+            {bestSellers.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+              />
+            ))}
 
-        <div className="grid grid-cols-4 gap-4">
+          </div>
 
-          {latestProducts.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          ))}
+        </section>
 
-        </div>
+        {/* LATEST */}
+        <section>
 
-      </section>
+          <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-green-600">
+            🆕 SẢN PHẨM MỚI
+          </h2>
+
+          <div className="grid grid-cols-4 gap-6">
+
+            {latestProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+              />
+            ))}
+
+          </div>
+
+        </section>
+
+      </div>
 
     </div>
   );

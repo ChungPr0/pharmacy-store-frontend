@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { IMAGES } from '../../constants/images'; 
+import { IMAGES } from '../constants/images'; 
 
 const Register = () => {
   const navigate = useNavigate();

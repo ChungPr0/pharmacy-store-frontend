@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { Link } from "react-router-dom";
 
 const Login = () => {
 
@@ -19,7 +20,7 @@ const Login = () => {
         password,
       });
 
-      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("token", res.data.data.token);
 
       navigate("/");
 
@@ -97,9 +98,12 @@ const Login = () => {
               Nhớ mật khẩu
             </label>
 
-            <a className="text-green-600 cursor-pointer">
+            <Link
+              to="/forgot-password"
+              className="text-green-600 text-sm hover:underline"
+            >
               Quên mật khẩu
-            </a>
+            </Link>
 
           </div>
 
@@ -115,10 +119,11 @@ const Login = () => {
           <p className="text-center text-sm mt-6">
 
             Chưa có tài khoản?  
+            <Link to="/register">
             <span className="text-green-600 cursor-pointer ml-1">
               Đăng ký ngay
             </span>
-
+            </Link>
           </p>
 
         </form>
@@ -128,5 +133,35 @@ const Login = () => {
     </div>
   );
 };
+const handleLogin = async (e) => {
+  e.preventDefault();
 
+  try {
+    const res = await api.post("/auth/login", {
+      phone,
+      password,
+    });
+
+    console.log(res.data); // 👈 debug
+
+    const token = res.data.data.token;
+    const role = res.data.data.role;
+
+    console.log("TOKEN:", token);
+    console.log("ROLE:", role);
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("role", role);
+
+    if (role === "ADMIN") {
+      navigate("/admin");
+    } else {
+      navigate("/");
+    }
+
+  } catch (err) {
+    console.log(err);
+    alert("Sai tài khoản hoặc lỗi API");
+  }
+};
 export default Login;
