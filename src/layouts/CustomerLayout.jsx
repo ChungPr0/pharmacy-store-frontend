@@ -85,9 +85,9 @@ export default function CustomerLayout() {
                 <div className="w-full max-w-[650px] flex flex-col items-center">
                   <div className="flex space-x-10 xl:space-x-12 mb-2">
                     <span onClick={() => navigate('/')} className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A] cursor-pointer">Trang chủ</span>
-                    <a href="#" className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A]">Giới thiệu</a>
-                    <a href="#" className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A]">Tin tức</a>
-                    <a href="#" className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A]">Hỗ trợ</a>
+                    <span onClick={() => navigate('/about')} className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A] cursor-pointer">Giới thiệu</span>
+                    <span onClick={() => navigate('/news')} className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A] cursor-pointer">Tin tức</span>
+                    <span onClick={() => navigate('/support')} className="text-[14px] font-medium text-gray-800 hover:text-[#2D982A] cursor-pointer">Hỗ trợ</span>
                   </div>
 
                   <div className="relative w-full">
@@ -241,17 +241,34 @@ export default function CustomerLayout() {
               
               <div className="flex space-x-4 mb-6">
                 {/* FB Blue */}
-                <div className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer hover:opacity-80 shadow-sm">
+                <a 
+                  href="https://www.facebook.com/profile.php?id=100067808426890&locale=vi_VN"
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer hover:opacity-80 shadow-sm"
+                >
                   <svg fill="white" viewBox="0 0 24 24" className="w-5 h-5"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                </div>
+                </a>
+
                 {/* Google Color */}
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100">
+                <a 
+                  href="https://share.google/tnMz0EnCJevlty52E" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"
+                >
                   <svg viewBox="0 0 24 24" className="w-5 h-5"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                </div>
-                {/* Gmail Color */}
-                <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100">
-                  <svg viewBox="0 0 24 24" className="w-5 h-5"><path fill="#EA4335" d="M2 5.5l10 7.5 10-7.5V19H2z"/><path fill="#C5221F" d="M2 5.5l10 7.5L2 20.5z"/><path fill="#FABB05" d="M22 5.5l-10 7.5L22 20.5z"/><path fill="#4285F4" d="M12 13L2 5.5H22z"/></svg>
-                </div>
+                </a>
+
+                {/* 3. Zalo */}
+                <a 
+                  href="https://zalo.me/09831497xx" // <- Sửa số điện thoại Zalo của nhà thuốc vào đây nhé
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"
+                >
+                  <svg viewBox="0 0 24 24" fill="#0068FF" className="w-19 h-17"><path d="M21.036 12c0-5.111-4.704-9.253-10.5-9.253C4.74 2.747 0 6.889 0 12c0 2.502 1.109 4.773 2.923 6.438-.179 1.636-.889 3.203-.925 3.359-.059.26.155.51.423.447 2.146-.499 4.254-1.634 5.393-2.378 1.16.326 2.404.502 3.722.502 5.796 0 10.5-4.142 10.5-9.253zm-14.83 2.222v-3.79c0-.283.21-.527.49-.554h2.529c.307 0 .556.25.556.558v.481c0 .307-.25.557-.556.557H7.728v.538h1.498c.306 0 .555.25.555.557v.48c0 .308-.25.557-.555.557H7.728v.636c0 .285-.211.53-.492.556H6.702c-.282-.026-.493-.27-.493-.556zm5.83-2.124h-1.57c-.308 0-.557-.25-.557-.557v-.481c0-.308.25-.558.557-.558h1.57c.308 0 .556.25.556.558v.481c0 .307-.25.557-.556.557zm-1.57 2.124h1.57c.308 0 .556-.25.556-.557v-.48c0-.307-.25-.557-.556-.557h-1.57c-.308 0-.557.25-.557.557v.48c0 .308.25.557.557.557zm4.195-2.124h-1.57c-.307 0-.556-.25-.556-.557v-.481c0-.308.25-.558.556-.558h1.57c.308 0 .557.25.557.558v.481c0 .307-.25.557-.557.557zm-1.57 2.124h1.57c.308 0 .557-.25.557-.557v-.48c0-.307-.25-.557-.557-.557h-1.57c-.307 0-.556.25-.556.557v.48c0 .308.25.557.556.557zm4.195-1.03c0 1.222-.996 2.213-2.222 2.213s-2.222-.99-2.222-2.213.996-2.213 2.222-2.213 2.222.99 2.222 2.213zm-1.111 0c0-.61-.497-1.106-1.111-1.106s-1.111.496-1.111 1.106.497 1.106 1.111 1.106 1.111-.496 1.111-1.106z"/></svg>
+                </a>
               </div>
 
               <p className="text-[14px] text-gray-800 mb-6 flex items-center"><strong>Hotline:</strong> <span className="font-black text-[18px] text-black tracking-wide ml-2">1800 29YY</span></p>
