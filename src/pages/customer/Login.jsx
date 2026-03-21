@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import api from "../../api/axios";
 import { Link } from "react-router-dom";
 
 const Login = () => {
@@ -133,35 +133,5 @@ const Login = () => {
     </div>
   );
 };
-const handleLogin = async (e) => {
-  e.preventDefault();
 
-  try {
-    const res = await api.post("/auth/login", {
-      phone,
-      password,
-    });
-
-    console.log(res.data); // 👈 debug
-
-    const token = res.data.data.token;
-    const role = res.data.data.role;
-
-    console.log("TOKEN:", token);
-    console.log("ROLE:", role);
-
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", role);
-
-    if (role === "ADMIN") {
-      navigate("/admin");
-    } else {
-      navigate("/");
-    }
-
-  } catch (err) {
-    console.log(err);
-    alert("Sai tài khoản hoặc lỗi API");
-  }
-};
 export default Login;

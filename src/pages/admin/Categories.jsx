@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import CategoryItem from "../../components/admin/CategoryItem";
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);

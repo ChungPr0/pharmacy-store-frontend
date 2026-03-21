@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { IMAGES } from '../constants/images'; 
+import { IMAGES } from '../../constants/images'; 
 
 const Register = () => {
   const navigate = useNavigate();
@@ -15,7 +15,6 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   
-  // 1. State quản lý ẩn, hiện mật khẩu
   const [showPassword, setShowPassword] = useState({
     password: false,
     confirmPassword: false
@@ -147,140 +146,146 @@ const Register = () => {
     );
   }, [formData, loading]);
 
+  // Cuộn lên đầu khi vào trang
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
-    <div className="flex w-full min-h-screen font-sans bg-white overflow-x-hidden">
+    <main className="flex-1 w-full bg-[#f8f9fa] py-12 px-4 sm:px-6 flex justify-center items-center font-sans antialiased">
       <Toaster />
       
-      <div className="hidden md:flex md:w-1/2 items-center justify-center p-8 sticky top-0 h-screen bg-white">
-        <img src={IMAGES.LOGO_DK} alt="Pharmacy" className="max-w-lg w-full h-auto object-contain" />
-      </div>
+      {/* KHỐI CARD ĐĂNG KÝ BỌC NGOÀI */}
+      <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 w-full max-w-[1000px] flex flex-col md:flex-row overflow-hidden">
+        
+        {/* Cột Trái (Ảnh) */}
+        <div className="hidden md:flex md:w-5/12 bg-[#eef8ef] items-center justify-center p-10">
+          <img src={IMAGES.LOGO_DK} alt="Pharmacy" className="w-full h-auto object-contain hover:scale-105 transition-transform duration-500" />
+        </div>
 
-      <div className="w-full md:w-1/2 bg-[#f1f8f1] flex flex-col items-center py-6 px-6 md:px-12">
-        <div className="w-full max-w-lg">
-          <div className="text-center mb-6">
-            <h2 className="text-4xl font-black text-[#2D982A] uppercase">Đăng ký</h2>
-            <div className="h-1.5 w-16 bg-[#2D982A] mx-auto mt-2"></div>
+        {/* Cột Phải (Form) */}
+        <div className="w-full md:w-7/12 py-10 px-8 sm:px-12 flex flex-col">
+          <div className="text-center mb-8">
+            <h2 className="text-[28px] font-black text-[#2D982A] uppercase tracking-wide">Đăng ký thành viên</h2>
+            <div className="h-1.5 w-16 bg-[#2D982A] mx-auto mt-3 rounded-full"></div>
+            <p className="text-gray-500 text-[14px] mt-4">Điền thông tin bên dưới để tận hưởng ưu đãi từ Thái Dương</p>
           </div>
           
           <form className="space-y-5" onSubmit={handleSubmit}>
+            
             {/* Tên, SĐT, Email, Địa chỉ */}
             {[
-              { label: 'Tên', name: 'fullName', type: 'text', req: true },
+              { label: 'Họ và tên', name: 'fullName', type: 'text', req: true },
               { label: 'Số điện thoại', name: 'phone', type: 'text', req: true },
               { label: 'Email', name: 'email', type: 'email', req: false },
               { label: 'Địa chỉ', name: 'address', type: 'text', req: false },
             ].map((field) => (
               <div key={field.name} className="flex flex-col">
-                <div className="flex items-center space-x-3">
-                  <label className="w-36 text-lg font-bold text-gray-700">{field.label}:</label>
-                  <div className={`flex-1 relative border-b-2 transition-all ${errors[field.name] ? 'border-red-500' : 'border-gray-400 focus-within:border-[#2D982A]'}`}>
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                  <label className="sm:w-32 text-[14px] font-bold text-gray-800">{field.label}:</label>
+                  <div className={`flex-1 relative border-b-2 transition-all ${errors[field.name] ? 'border-red-500' : 'border-gray-300 focus-within:border-[#2D982A]'}`}>
                     <input 
                       type={field.type} name={field.name} value={formData[field.name]} 
                       onChange={handleChange} onBlur={handleBlur}
-                      className="w-full bg-transparent outline-none py-1.5 text-lg" 
+                      className="w-full bg-transparent outline-none py-1.5 text-[15px] text-gray-900" 
                     />
-                    {field.req && <span className="absolute -right-3 top-1 text-red-500 font-bold">*</span>}
+                    {field.req && <span className="absolute right-0 top-1/2 -translate-y-1/2 text-red-500 font-bold">*</span>}
                   </div>
                 </div>
-                {errors[field.name] && <p className="text-red-600 text-sm font-medium italic mt-1 text-right">{errors[field.name]}</p>}
+                {errors[field.name] && <p className="text-red-500 text-[13px] font-medium italic mt-1 sm:ml-[140px]">{errors[field.name]}</p>}
               </div>
             ))}
 
             {/* Giới tính */}
-            <div className="flex items-center space-x-3">
-              <label className="w-36 text-lg font-bold text-gray-700">Giới tính:</label>
-              <div className="flex space-x-10">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+              <label className="sm:w-32 text-[14px] font-bold text-gray-800">Giới tính:</label>
+              <div className="flex space-x-8">
                 {['MALE', 'FEMALE'].map((g) => (
                   <label key={g} className="flex items-center space-x-2 cursor-pointer group">
-                    <input type="radio" name="gender" value={g} checked={formData.gender === g} onChange={handleChange} className="accent-[#2D982A] w-5 h-5 cursor-pointer" />
-                    <span className="text-lg group-hover:text-[#2D982A] transition-colors">{g === 'MALE' ? 'Nam' : 'Nữ'}</span>
+                    <input type="radio" name="gender" value={g} checked={formData.gender === g} onChange={handleChange} className="accent-[#2D982A] w-4 h-4 cursor-pointer" />
+                    <span className="text-[15px] font-medium text-gray-700 group-hover:text-[#2D982A] transition-colors">{g === 'MALE' ? 'Nam' : 'Nữ'}</span>
                   </label>
                 ))}
               </div>
             </div>
 
-            {/*  */}
-            <div className="space-y-5">
-              {[{label: 'Mật khẩu', name: 'password'}, {label: 'Nhập lại mật khẩu', name: 'confirmPassword'}].map(f => (
+            {/* Mật khẩu */}
+            <div className="space-y-5 pt-1">
+              {[{label: 'Mật khẩu', name: 'password'}, {label: 'Nhập lại MK', name: 'confirmPassword'}].map(f => (
                 <div key={f.name} className="flex flex-col">
-                  <div className="flex items-center space-x-3">
-                    <label className="w-36 text-lg font-bold text-gray-700 leading-tight">{f.label}:</label>
-                    <div className={`flex-1 relative border-b-2 transition-all ${errors[f.name] ? 'border-red-500' : 'border-gray-400 focus-within:border-[#2D982A]'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                    <label className="sm:w-32 text-[14px] font-bold text-gray-800">{f.label}:</label>
+                    <div className={`flex-1 relative border-b-2 transition-all ${errors[f.name] ? 'border-red-500' : 'border-gray-300 focus-within:border-[#2D982A]'}`}>
                       <input 
                         type={showPassword[f.name] ? "text" : "password"} 
                         name={f.name} 
                         onChange={handleChange} 
                         onBlur={handleBlur}
-                        className="w-full bg-transparent outline-none py-1.5 text-lg pr-10" 
+                        className="w-full bg-transparent outline-none py-1.5 text-[15px] text-gray-900 pr-10" 
                       />
-                      {/*  */}
                       <button
                         type="button"
                         onClick={() => togglePasswordVisibility(f.name)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#2D982A] transition-colors"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#2D982A] transition-colors"
                       >
                         {showPassword[f.name] ? (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                          </svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" /></svg>
                         ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.413 8.242 7.244 4.5 12 4.5c4.757 0 8.587 3.742 9.964 7.178.07.333.07.678 0 1.012-1.377 3.436-5.207 7.178-9.964 7.178-4.757 0-8.588-3.742-9.964-7.178z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.644C3.413 8.242 7.244 4.5 12 4.5c4.757 0 8.587 3.742 9.964 7.178.07.333.07.678 0 1.012-1.377 3.436-5.207 7.178-9.964 7.178-4.757 0-8.588-3.742-9.964-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                         )}
                       </button>
                     </div>
                   </div>
-                  {errors[f.name] && <p className="text-red-600 text-sm font-medium italic mt-1 text-right">{errors[f.name]}</p>}
+                  {errors[f.name] && <p className="text-red-500 text-[13px] font-medium italic mt-1 sm:ml-[140px]">{errors[f.name]}</p>}
                 </div>
               ))}
             </div>
 
-            {/* OTP  */}
-            <div className="flex flex-col items-center space-y-4 pt-2">
+            {/* Khối lấy OTP */}
+            <div className="flex flex-col items-center space-y-4 pt-6">
               <button 
                 type="button" onClick={handleGetOTP} disabled={countdown > 0} 
-                className={`text-xl font-bold underline transition-all ${countdown > 0 ? 'text-gray-400' : 'text-[#2D982A] hover:scale-105 cursor-pointer'}`}
+                className={`text-[15px] font-bold underline transition-all ${countdown > 0 ? 'text-gray-400' : 'text-[#2D982A] hover:text-green-700 cursor-pointer'}`}
               >
                 {countdown > 0 ? `Gửi lại mã (${countdown}s)` : "Lấy mã OTP"}
               </button>
               
-              <div className="flex flex-col w-full px-2">
-                <div className="flex items-center space-x-3">
-                  <label className="text-lg font-bold text-gray-700 whitespace-nowrap">Mã xác nhận:</label>
+              <div className="flex flex-col w-full px-4 sm:px-12">
+                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                  <label className="text-[14px] font-bold text-gray-700 whitespace-nowrap">Mã xác nhận:</label>
                   <input 
                     name="otpCode" maxLength="6" onChange={handleChange} onBlur={handleBlur}
                     type="text" 
-                    className={`flex-1 border-2 rounded-xl py-2 text-2xl text-center font-bold tracking-[0.4em] outline-none ${errors.otpCode ? 'border-red-500' : 'border-gray-300 focus:border-[#2D982A]'}`} 
-                    placeholder="6 số" 
+                    className={`flex-1 border-2 rounded-lg py-2 text-xl text-center font-bold tracking-[0.3em] outline-none transition-colors ${errors.otpCode ? 'border-red-500' : 'border-gray-300 focus:border-[#2D982A]'}`} 
+                    placeholder="6 SỐ" 
                   />
                 </div>
-                {errors.otpCode && <p className="text-red-600 text-sm font-medium italic mt-1 text-right">{errors.otpCode}</p>}
+                {errors.otpCode && <p className="text-red-500 text-[13px] font-medium italic mt-1 text-center">{errors.otpCode}</p>}
               </div>
             </div>
 
-            <div className="flex justify-center pt-2">
+            {/* Nút Submit */}
+            <div className="flex justify-center pt-6">
               <button 
                 type="submit" 
-                className={`px-24 py-4 rounded-full font-black text-2xl text-white uppercase shadow-lg transition-all cursor-pointer
+                className={`w-full sm:w-auto px-16 py-3.5 rounded-full font-bold text-[15px] text-white uppercase shadow-md transition-all
                   ${isReady 
-                    ? "bg-[#2D982A] hover:scale-105 active:scale-95 shadow-[#2d982a55]" 
-                    : "bg-[#2D982A] opacity-40 hover:opacity-60"} 
+                    ? "bg-[#2D982A] hover:bg-green-700 hover:shadow-lg cursor-pointer" 
+                    : "bg-[#2D982A] opacity-50 cursor-not-allowed"} 
                 `}
               >
-                {loading ? "ĐANG XỬ LÝ..." : "HOÀN TẤT"}
+                {loading ? "Đang xử lý..." : "Hoàn tất đăng ký"}
               </button>
             </div>
 
-            <div className="pt-4 border-t-2 border-sky-400 text-center">
-              <span className="text-lg font-bold text-gray-800">Đã có tài khoản? </span>
-              <a href="/login" className="text-[#2D982A] text-lg font-black underline hover:opacity-70 cursor-pointer">Đăng nhập</a>
+            <div className="pt-6 border-t border-gray-100 text-center">
+              <span className="text-[14px] text-gray-600">Đã có tài khoản? </span>
+              <span onClick={() => navigate('/login')} className="text-[#2D982A] text-[15px] font-bold hover:underline cursor-pointer">Đăng nhập ngay</span>
             </div>
           </form>
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 
