@@ -8,7 +8,7 @@ const CategoryTree = ({ data, refresh }) => {
   // thêm danh mục
   const handleAdd = async (parentId = null) => {
     try {
-      await api.post("/api/v1/admin/categories", {
+      await api.post("/admin/categories", {
         name,
         parentId,
       });
@@ -26,7 +26,7 @@ const CategoryTree = ({ data, refresh }) => {
     if (!confirm("Xóa danh mục?")) return;
 
     try {
-      await api.delete(`/api/v1/admin/categories/${slug}`);
+      await api.delete(`/admin/categories/${slug}`);
       refresh();
     } catch (err) {
       alert(err.response?.data?.message);

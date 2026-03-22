@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import axios from 'axios';
 import { toast, Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { IMAGES } from '../../constants/images'; 
+import { IMAGES } from '../../constants/images';
+import authAxios from '../../api/authAxios';
+import { useCart } from '../../contexts/CartContext'; 
 
 const Register = () => {
   const navigate = useNavigate();
+  const { setUser } = useCart();
   const [formData, setFormData] = useState({
-    fullName: '', phone: '', email: '', address: '',
+    fullName: '', phone: '', email: '',
     gender: 'MALE', password: '', confirmPassword: '', otpCode: ''
   });
 
@@ -94,15 +96,22 @@ const Register = () => {
 
     try {
       setLoading(true);
-      const response = await axios.post('http://35.247.173.19:8080/api/v1/auth/register/request-otp', {
+      const response = await authAxios.post('/auth/register/request-otp', {
         phone: formData.phone
       });
       if (response.data.status === 200) {
-        toast.success("Mã OTP đã được gửi!");
-        setCountdown(60);
+        toast.success(response.data.message || "Mã OTP đã được gửi!");
+        setCountdown(response.data.data?.otpTimeout || 60);
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Lỗi gửi mã OTP");
+      console.error('OTP Error Details:', {
+        status: error.response?.status,
+        message: error.response?.data?.message,
+        data: error.response?.data,
+        url: error.config?.url
+      });
+      const errorMsg = error.response?.data?.message || error.message || "Lỗi gửi mã OTP";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -119,16 +128,29 @@ const Register = () => {
     try {
       setLoading(true);
       const { confirmPassword, ...dataToSend } = formData;
-      const response = await axios.post('http://35.247.173.19:8080/api/v1/auth/register/verify-otp', dataToSend);
+      // Đảm bảo email được gửi (hoặc empty string nếu không có)
+      const payload = {
+        ...dataToSend,
+        email: dataToSend.email || ""
+      };
+      const response = await authAxios.post('/auth/register/verify-otp', payload);
       if (response.data.status === 201) {
-        toast.success("Đăng ký thành công!");
-        localStorage.setItem('registeredPhone', response.data.data.phone);
-        setTimeout(() => navigate('/login'), 2000);
+        toast.success(response.data.message || "Đăng ký thành công!");
+        // Lưu phone để fill vào login form
+        if (response.data.data?.phone) {
+          localStorage.setItem('registeredPhone', response.data.data.phone);
+        }
+        setTimeout(() => navigate('/login'), 1500);
       }
     } catch (error) {
-      const apiRes = error.response?.data;
-      if (apiRes?.data) setErrors(apiRes.data);
-      toast.error(apiRes?.message || "Đăng ký thất bại");
+      const errorData = error.response?.data;
+      // Nếu API trả về lỗi validate ở từng field
+      if (errorData?.data && typeof errorData.data === 'object') {
+        setErrors(errorData.data);
+        console.error('Validation errors:', errorData.data);
+      }
+      const errorMsg = errorData?.message || "Đăng ký thất bại";
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -153,7 +175,6 @@ const Register = () => {
 
   return (
     <main className="flex-1 w-full bg-[#f8f9fa] py-12 px-4 sm:px-6 flex justify-center items-center font-sans antialiased">
-      <Toaster />
       
       {/* KHỐI CARD ĐĂNG KÝ BỌC NGOÀI */}
       <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 w-full max-w-[1000px] flex flex-col md:flex-row overflow-hidden">
@@ -173,12 +194,11 @@ const Register = () => {
           
           <form className="space-y-5" onSubmit={handleSubmit}>
             
-            {/* Tên, SĐT, Email, Địa chỉ */}
+            {/* Tên, SĐT, Email */}
             {[
               { label: 'Họ và tên', name: 'fullName', type: 'text', req: true },
               { label: 'Số điện thoại', name: 'phone', type: 'text', req: true },
               { label: 'Email', name: 'email', type: 'email', req: false },
-              { label: 'Địa chỉ', name: 'address', type: 'text', req: false },
             ].map((field) => (
               <div key={field.name} className="flex flex-col">
                 <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">

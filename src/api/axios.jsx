@@ -1,7 +1,9 @@
 import axios from "axios";
+import { API_CONFIG } from "./config";
 
 const api = axios.create({
-  baseURL: "http://localhost:8080/api/v1",
+  baseURL: API_CONFIG.baseURL,
+  timeout: API_CONFIG.timeout,
 });
 
 // Gắn token tự động

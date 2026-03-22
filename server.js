@@ -1,5 +1,11 @@
-const jsonServer = require('json-server');
-const cors = require('cors');
+import jsonServer from 'json-server';
+import cors from 'cors';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 const server = jsonServer.create();
 const router = jsonServer.router('db.json');
 const middlewares = jsonServer.defaults();
@@ -90,15 +96,14 @@ server.post('/api/v1/auth/register/request-otp', (req, res) => {
   });
 });
 
-// I Xác thực OTP & GHI DỮ LIỆU VÀO db.json
+// Xác thực OTP & GHI DỮ LIỆU VÀO db.json
 server.post('/api/v1/auth/register/verify-otp', (req, res) => {
-  // Lấy toàn bộ dữ liệu từ formData gửi lên
   const { otpCode, fullName, phone, email, address, gender, password } = req.body;
 
   if (otpCode === "123456") {
-    const db = router.db; // Truy cập vào cơ sở dữ liệu db.json
+    const db = router.db;
 
-    // Kiểm tra xem SĐT đã tồn tại chưa (tránh trùng lặp)
+    // Kiểm tra xem SĐT đã tồn tại chưa
     const userExists = db.get('users').find({ phone: phone }).value();
     if (userExists) {
       return res.status(400).json({
@@ -108,7 +113,6 @@ server.post('/api/v1/auth/register/verify-otp', (req, res) => {
       });
     }
 
-    
     const newUser = {
       id: Date.now(), 
       fullName,
@@ -132,7 +136,7 @@ server.post('/api/v1/auth/register/verify-otp', (req, res) => {
     };
     db.get('carts').push(newCart).write();
 
-    console.log(" Đã lưu người dùng mới:", fullName);
+    console.log("Đã lưu người dùng mới:", fullName);
 
     res.status(201).json({
       status: 201,
@@ -355,5 +359,5 @@ server.delete('/api/v1/cart/items/:productId', checkAuth, (req, res) => {
 
 server.use(router);
 server.listen(5000, () => {
-  console.log(' MOCK SERVER ĐÃ CHẠY  http://localhost:5000');
+  console.log('✅ MOCK SERVER ĐÃ CHẠY -- http://localhost:5000');
 });

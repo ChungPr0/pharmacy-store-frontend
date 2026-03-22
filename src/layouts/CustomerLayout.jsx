@@ -1,26 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
+import { toast, Toaster, resolveValue } from 'react-hot-toast';
 import { IMAGES } from '../constants/images';
-
-const BASE_URL = 'http://35.247.173.19:8080/api/v1';
+import axiosClient from '../api/axiosClient';
+import { useCart } from '../contexts/CartContext';
 
 export default function CustomerLayout() {
   const navigate = useNavigate();
+  const { user, token, getTotalItems, logout, fetchCart } = useCart();
   
-  // State cho Header
   const [showPromo, setShowPromo] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  // =====================================================================
-  // HÀM KIỂM TRA ĐĂNG NHẬP: Dùng cho Giỏ hàng và Lịch sử
-  // =====================================================================
+  // SỬA LỖI VÒNG LẶP: Bỏ fetchCart ra khỏi mảng [] ở cuối
+  useEffect(() => {
+    if (token) {
+      const timer = setTimeout(() => {
+        fetchCart();
+      }, 100);
+
+      window.addEventListener('cartUpdated', fetchCart);
+
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('cartUpdated', fetchCart);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]); 
+
   const handleProtectedAction = (path) => {
-    // Giả sử sau này bạn Login thành công, bạn sẽ lưu token vào localStorage
-    const isLoggedIn = localStorage.getItem('accessToken'); 
-    
-    if (!isLoggedIn) {
+    if (!token) {
       toast.error('Vui lòng đăng nhập để tiếp tục!');
       navigate('/login');
     } else {
@@ -28,7 +38,8 @@ export default function CustomerLayout() {
     }
   };
 
-  const handleSearch = async (e) => {
+  // HÀM TÌM KIẾM MỚI (Chuyển hướng sang /search)
+  const handleSearch = (e) => {
     if (e && e.key && e.key !== 'Enter') return;
     if (e && e.preventDefault) e.preventDefault();
 
@@ -37,43 +48,73 @@ export default function CustomerLayout() {
       return;
     }
 
-    const searchToast = toast.loading('Đang tìm kiếm...');
-
-    try {
-      const requestBody = {
-        categorySlug: "", 
-        pageNo: 0,
-        pageSize: 15,
-        sortBy: "createdAt",
-        sortDir: "DESC",
-        keyword: searchKeyword.trim()
-      };
-
-      const res = await axios.post(`${BASE_URL}/products/search`, requestBody);
-      
-      if (res.data.status === 200) {
-        const foundProducts = res.data.data.content;
-        const totalFound = res.data.data.totalElements;
-
-        if (foundProducts.length > 0) {
-          toast.success(`Tìm thấy ${totalFound} sản phẩm khớp với "${searchKeyword}"`, { id: searchToast });
-        } else {
-          toast.error(`Không tìm thấy sản phẩm nào khớp với "${searchKeyword}"`, { id: searchToast });
-        }
-      }
-    } catch (error) {
-      console.error("Lỗi tìm kiếm:", error);
-      toast.error('Lỗi kết nối đến máy chủ khi tìm kiếm!', { id: searchToast });
-    }
+    document.activeElement.blur(); 
+    navigate(`/search?keyword=${encodeURIComponent(searchKeyword.trim())}`);
   };
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-sans text-gray-800 flex flex-col relative">
-      <Toaster position="top-center" />
+      
+      <style>
+        {`
+          @keyframes shrink-progress {
+            0% { width: 100%; }
+            100% { width: 0%; }
+          }
+        `}
+      </style>
 
-      {/* =========================================================
-          HEADER (Luôn hiển thị)
-          ========================================================= */}
+      <Toaster 
+        position="top-right" 
+        containerStyle={{ zIndex: 999999, top: 20, right: 20 }}
+        toastOptions={{ duration: 5000 }} 
+      >
+        {(t) => {
+          let color = "bg-blue-500";
+          let borderColor = "border-blue-500";
+          let icon = <span className="text-white font-bold text-[14px]">i</span>;
+
+          if (t.type === 'success') {
+            color = "bg-[#22c55e]"; borderColor = "border-[#22c55e]";
+            icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>;
+          } else if (t.type === 'error') {
+            color = "bg-[#ef4444]"; borderColor = "border-[#ef4444]";
+            icon = <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>;
+          } else if (t.type === 'loading') {
+            color = "bg-[#f59e0b]"; borderColor = "border-[#f59e0b]";
+            icon = <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>;
+          }
+
+          return (
+            <div
+              style={{
+                opacity: t.visible ? 1 : 0,
+                transform: t.visible ? 'translateY(0) scale(1)' : 'translateY(-10px) scale(0.95)',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+              }}
+              className={`max-w-sm w-full bg-white shadow-xl rounded-lg pointer-events-auto flex flex-col border-l-[5px] ${borderColor} relative overflow-hidden`}
+            >
+              <div className="p-4 w-full flex items-center">
+                <div className="flex-shrink-0">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm ${color}`}>{icon}</div>
+                </div>
+                <div className="ml-3 flex-1">
+                  <p className="text-[15px] font-bold text-gray-800 pr-2 leading-snug">{resolveValue(t.message, t)}</p>
+                </div>
+                <div className="flex-shrink-0 flex ml-2">
+                  <button onClick={() => toast.dismiss(t.id)} className="p-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors focus:outline-none">
+                    <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                  </button>
+                </div>
+              </div>
+              {t.visible && (
+                <div className={`absolute bottom-0 left-0 h-[4px] ${color} opacity-80`} style={{ animation: 'shrink-progress 5s linear forwards' }}></div>
+              )}
+            </div>
+          );
+        }}
+      </Toaster>
+
       <div className="sticky top-0 z-50 w-full shadow-md flex flex-col flex-shrink-0">
         {showPromo && (
           <div className="bg-[#2D982A] text-white relative flex justify-center items-center py-1.5 px-4">
@@ -89,13 +130,10 @@ export default function CustomerLayout() {
 
         <header className="bg-white border-b border-gray-200">
           <div className="w-full px-6 xl:px-16 py-3 flex items-center justify-between">
-            
-            {/* Logo */}
             <div className="flex-shrink-0 mr-4 cursor-pointer" onClick={() => navigate('/')}>
               <img src={IMAGES.LOGO_MAIN} alt="Nhà thuốc Thái Dương" className="h-16 xl:h-20 object-contain" />
             </div>
 
-            {/* Menu & Search */}
             <div className="flex-1 flex justify-center px-4">
               <div className="w-full max-w-[650px] flex flex-col items-center">
                 <div className="flex space-x-10 xl:space-x-12 mb-2">
@@ -114,35 +152,44 @@ export default function CustomerLayout() {
               </div>
             </div>
 
-            {/* Các nút tương tác bên phải */}
             <div className="flex-shrink-0 flex flex-col items-end ml-4">
               <div className="flex items-center space-x-6 mb-2">
                 <div className="text-[14px] text-gray-700">Hotline: <span className="text-[17px] font-bold text-black ml-1">1800 29YY</span></div>
-                
-                {/* NÚT ĐĂNG NHẬP */}
-                <div onClick={() => navigate('/login')} className="flex items-center space-x-1.5 cursor-pointer hover:text-[#2D982A] group">
-                  <span className="text-[14px] font-bold text-gray-800 group-hover:text-[#2D982A]">Đăng nhập</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[26px] h-[26px] text-[#2D982A]"><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12 4.5a7.5 7.5 0 100 15 7.5 7.5 0 000-15zM12 12a3.375 3.375 0 100-6.75 3.375 3.375 0 000 6.75zM6.621 17.073a5.25 5.25 0 0110.758 0 .75.75 0 01-1.071.936A3.75 3.75 0 0012 15a3.75 3.75 0 00-4.308 3.009.75.75 0 01-1.071-.936z" clipRule="evenodd" /></svg>
-                </div>
+                {token && user ? (
+                  <div className="flex items-center space-x-3">
+                    <span className="text-[14px] font-bold text-gray-800">Xin chào, {user.fullName || user.phone}</span>
+                    <button
+                      onClick={() => {
+                        logout();
+                        navigate('/login');
+                        toast.success('Đã đăng xuất!');
+                      }}
+                      className="text-[14px] font-bold text-[#2D982A] hover:text-green-700 cursor-pointer"
+                    >
+                      Đăng xuất
+                    </button>
+                  </div>
+                ) : (
+                  <div onClick={() => navigate('/login')} className="flex items-center space-x-1.5 cursor-pointer hover:text-[#2D982A] group">
+                    <span className="text-[14px] font-bold text-gray-800 group-hover:text-[#2D982A]">Đăng nhập</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[26px] h-[26px] text-[#2D982A]"><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM12 4.5a7.5 7.5 0 100 15 7.5 7.5 0 000-15zM12 12a3.375 3.375 0 100-6.75 3.375 3.375 0 000 6.75zM6.621 17.073a5.25 5.25 0 0110.758 0 .75.75 0 01-1.071.936A3.75 3.75 0 0012 15a3.75 3.75 0 00-4.308 3.009.75.75 0 01-1.071-.936z" clipRule="evenodd" /></svg>
+                  </div>
+                )}
               </div>
               
               <div className="flex items-center space-x-3">
-                {/* NÚT LỊCH SỬ MUA HÀNG: Bị chặn nếu chưa login */}
-                <button 
-                  onClick={() => handleProtectedAction('/orders')} 
-                  className="flex items-center border cursor-pointer border-gray-300 rounded-lg px-3.5 py-1.5 hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => handleProtectedAction('/orders')} className="flex items-center border cursor-pointer border-gray-300 rounded-lg px-3.5 py-1.5 hover:bg-gray-50 transition-colors">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-[24px] h-[24px] text-[#2D982A] mr-2"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6" /></svg>
                   <div className="text-left leading-[1.1]"><span className="block text-[13px] font-bold text-gray-800">Lịch sử</span><span className="block text-[13px] font-bold text-gray-800">mua hàng</span></div>
                 </button>
-
-                {/* NÚT GIỎ HÀNG: Bị chặn nếu chưa login */}
-                <button 
-                  onClick={() => handleProtectedAction('/cart')} 
-                  className="flex items-center border cursor-pointer border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors"
-                >
+                <button onClick={() => handleProtectedAction('/cart')} className="flex items-center border cursor-pointer border-gray-300 rounded-lg px-4 py-2 hover:bg-gray-50 transition-colors relative">
                   <span className="text-[14px] font-bold text-gray-800 mr-2.5">Giỏ hàng</span>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-[#2D982A]"><path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" /></svg>
+                  {getTotalItems() > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-sm">
+                      {getTotalItems()}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -151,28 +198,30 @@ export default function CustomerLayout() {
 
         <nav className="bg-[#2D982A] text-white antialiased">
           <ul className="flex justify-center space-x-16 xl:space-x-24 py-3">
-            {['THUỐC', 'THỰC PHẨM CHỨC NĂNG', 'DƯỢC - MỸ PHẨM', 'THIẾT BỊ Y TẾ'].map((item, index) => (
-              <li key={index} className="flex items-center space-x-1.5 cursor-pointer hover:text-gray-100 transition-colors group relative">
-                <span className="text-[15px] font-normal tracking-wide">{item}</span>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-[14px] h-[14px] mt-0.5 group-hover:rotate-180 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
+            {[
+              { name: 'THUỐC', slug: 'thuoc' }, 
+              { name: 'THỰC PHẨM CHỨC NĂNG', slug: 'thuc-pham-chuc-nang' }, 
+              { name: 'DƯỢC - MỸ PHẨM', slug: 'duoc-my-pham' }, 
+              { name: 'THIẾT BỊ Y TẾ', slug: 'thiet-bi-y-te' }
+            ].map((item, index) => (
+              <li 
+                key={index} 
+                onClick={() => navigate(`/category/${item.slug}`)}
+                className="flex items-center space-x-1.5 cursor-pointer hover:text-gray-200 transition-colors group relative"
+              >
+                <span className="text-[15px] font-bold tracking-wide">{item.name}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-[14px] h-[14px] mt-0.5 group-hover:rotate-180 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" /></svg>
               </li>
             ))}
           </ul>
         </nav>
       </div>
 
-      {/* =========================================================
-          NỘI DUNG ĐỘNG
-          ========================================================= */}
       <main className="flex-1 w-full flex flex-col">
         <Outlet />
       </main>
 
-      {/* =========================================================
-          FOOTER (Luôn hiển thị)
-          ========================================================= */}
       <footer className="w-full bg-white mt-auto flex flex-col">
-        
         <div className="bg-[#dff5d8] py-10 flex flex-col items-center">
           <h2 className="text-xl md:text-2xl font-bold text-gray-800 uppercase tracking-wide mb-8">MUA HÀNG DỄ DÀNG TẠI THÁI DƯƠNG</h2>
           <div className="flex w-full max-w-4xl justify-center items-center space-x-12 px-6">
@@ -185,7 +234,7 @@ export default function CustomerLayout() {
             <div className="w-[1px] h-24 bg-[#2D982A] opacity-30 hidden md:block"></div>
             <div className="flex-1 flex flex-col items-center text-center">
               <div className="bg-transparent border-2 border-[#2D982A] w-14 h-14 rounded-full flex items-center justify-center mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="#2D982A" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 017.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53a.75.75 0 011.06 0z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#2D982A" className="w-8 h-8"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" /></svg>
               </div>
               <p className="text-gray-800 text-[15px] leading-relaxed">Chọn và mua ngay sản phẩm<br />tại website của nhà thuốc Thái Dương</p>
             </div>
@@ -241,37 +290,9 @@ export default function CustomerLayout() {
           <div className="lg:col-span-3">
             <h3 className="font-bold text-[15px] text-[#2D982A] mb-4 uppercase">KẾT NỐI VỚI THÁI DƯƠNG</h3>
             <div className="flex space-x-4 mb-6">
-              
-              {/* 1. Facebook */}
-              <a 
-                href="https://www.facebook.com/trang-cua-ban" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer hover:opacity-80 shadow-sm"
-              >
-                <svg fill="white" viewBox="0 0 24 24" className="w-5 h-5"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-              </a>
-
-              {/* 2. Google */}
-              <a 
-                href="https://g.page/nhathuocthaiduong" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"
-              >
-                <svg viewBox="0 0 24 24" className="w-5 h-5"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-              </a>
-
-              {/* 3. Zalo */}
-              <a 
-                href="https://zalo.me/098xxxxxxx"
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"
-              >
-                <svg viewBox="0 0 24 24" fill="#0068FF" className="w-6 h-6"><path d="M21.036 12c0-5.111-4.704-9.253-10.5-9.253C4.74 2.747 0 6.889 0 12c0 2.502 1.109 4.773 2.923 6.438-.179 1.636-.889 3.203-.925 3.359-.059.26.155.51.423.447 2.146-.499 4.254-1.634 5.393-2.378 1.16.326 2.404.502 3.722.502 5.796 0 10.5-4.142 10.5-9.253zm-14.83 2.222v-3.79c0-.283.21-.527.49-.554h2.529c.307 0 .556.25.556.558v.481c0 .307-.25.557-.556.557H7.728v.538h1.498c.306 0 .555.25.555.557v.48c0 .308-.25.557-.555.557H7.728v.636c0 .285-.211.53-.492.556H6.702c-.282-.026-.493-.27-.493-.556zm5.83-2.124h-1.57c-.308 0-.557-.25-.557-.557v-.481c0-.308.25-.558.557-.558h1.57c.308 0 .556.25.556.558v.481c0 .307-.25.557-.556.557zm-1.57 2.124h1.57c.308 0 .556-.25.556-.557v-.48c0-.307-.25-.557-.556-.557h-1.57c-.308 0-.557.25-.557.557v.48c0 .308.25.557.557.557zm4.195-2.124h-1.57c-.307 0-.556-.25-.556-.557v-.481c0-.308.25-.558.556-.558h1.57c.308 0 .557.25.557.558v.481c0 .307-.25.557-.557.557zm-1.57 2.124h1.57c.308 0 .557-.25.557-.557v-.48c0-.307-.25-.557-.557-.557h-1.57c-.307 0-.556.25-.556.557v.48c0 .308.25.557.556.557zm4.195-1.03c0 1.222-.996 2.213-2.222 2.213s-2.222-.99-2.222-2.213.996-2.213 2.222-2.213 2.222.99 2.222 2.213zm-1.111 0c0-.61-.497-1.106-1.111-1.106s-1.111.496-1.111 1.106.497 1.106 1.111 1.106 1.111-.496 1.111-1.106z"/></svg>
-              </a>
-
+              <a href="https://www.facebook.com" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer hover:opacity-80 shadow-sm"><svg fill="white" viewBox="0 0 24 24" className="w-5 h-5"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+              <a href="https://g.page" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"><svg viewBox="0 0 24 24" className="w-5 h-5"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg></a>
+              <a href="https://zalo.me" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"><svg viewBox="0 0 24 24" fill="#0068FF" className="w-6 h-6"><path d="M21.036 12c0-5.111-4.704-9.253-10.5-9.253C4.74 2.747 0 6.889 0 12c0 2.502 1.109 4.773 2.923 6.438-.179 1.636-.889 3.203-.925 3.359-.059.26.155.51.423.447 2.146-.499 4.254-1.634 5.393-2.378 1.16.326 2.404.502 3.722.502 5.796 0 10.5-4.142 10.5-9.253zm-14.83 2.222v-3.79c0-.283.21-.527.49-.554h2.529c.307 0 .556.25.556.558v.481c0 .307-.25.557-.556.557H7.728v.538h1.498c.306 0 .555.25.555.557v.48c0 .308-.25.557-.555.557H7.728v.636c0 .285-.211.53-.492.556H6.702c-.282-.026-.493-.27-.493-.556zm5.83-2.124h-1.57c-.308 0-.557-.25-.557-.557v-.481c0-.308.25-.558.557-.558h1.57c.308 0 .556.25.556.558v.481c0 .307-.25.557-.556.557zm-1.57 2.124h1.57c.308 0 .556-.25.556-.557v-.48c0-.307-.25-.557-.556-.557h-1.57c-.308 0-.557.25-.557.557v.48c0 .308.25.557.557.557zm4.195-2.124h-1.57c-.307 0-.556-.25-.556-.557v-.481c0-.308.25-.558.556-.558h1.57c.308 0 .557.25.557.558v.481c0 .307-.25.557-.557.557zm-1.57 2.124h1.57c.308 0 .557-.25.557-.557v-.48c0-.307-.25-.557-.557-.557h-1.57c-.307 0-.556.25-.556.557v.48c0 .308.25.557.556.557zm4.195-1.03c0 1.222-.996 2.213-2.222 2.213s-2.222-.99-2.222-2.213.996-2.213 2.222-2.213 2.222.99 2.222 2.213zm-1.111 0c0-.61-.497-1.106-1.111-1.106s-1.111.496-1.111 1.106.497 1.106 1.111 1.106 1.111-.496 1.111-1.106z"/></svg></a>
             </div>
             <p className="text-[14px] text-gray-800 mb-6 flex items-center"><strong>Hotline:</strong> <span className="font-black text-[18px] text-black tracking-wide ml-2">1800 29YY</span></p>
           </div>

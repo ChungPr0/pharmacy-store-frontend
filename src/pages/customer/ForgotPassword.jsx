@@ -14,7 +14,7 @@ const ForgotPassword = () => {
 
   const handleSendOtp = async () => {
     try {
-      await api.post("/api/v1/auth/forgot-password/request-otp", { phone });
+      await api.post("/auth/forgot-password/request-otp", { phone });
       alert("Đã gửi OTP");
     } catch {
       alert("Lỗi gửi OTP");
@@ -23,7 +23,7 @@ const ForgotPassword = () => {
 
   const handleVerifyOtp = async () => {
     try {
-      await api.post("/api/v1/auth/forgot-password/verify-otp", {
+      await api.post("/auth/forgot-password/verify-otp", {
         phone,
         otpCode: otp,
       });

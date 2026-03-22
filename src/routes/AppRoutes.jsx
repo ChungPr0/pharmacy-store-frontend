@@ -3,11 +3,14 @@ import CustomerLayout from '../layouts/CustomerLayout';
 import Home from '../pages/customer/Home';
 import Register from '../pages/customer/Register';
 import ProductDetail from '../pages/customer/ProductDetail'; 
+import Cart from '../pages/customer/Cart';
 import About from '../pages/customer/About';
 import News from '../pages/customer/News';
 import Support from '../pages/customer/Support';
 import Login from '../pages/customer/Login';
 import ForgotPassword from '../pages/customer/ForgotPassword';
+import Category from '../pages/customer/Category';
+import SearchResults from '../pages/customer/SearchResults';
 
 import AdminLayout from '../layouts/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
@@ -29,9 +32,12 @@ export default function AppRoutes() {
           <Route path="login" element={<Login />} />
           <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="product/:slug" element={<ProductDetail />} />
+          <Route path="cart" element={<Cart />} />
+          <Route path="search" element={<SearchResults />} />
           <Route path="about" element={<About />} />
           <Route path="news" element={<News />} />
           <Route path="support" element={<Support />} />
+          <Route path="category/:slug" element={<Category />} />
         </Route>
 
         {/* ADMIN ROUTES */}

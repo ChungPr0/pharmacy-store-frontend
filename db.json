@@ -9,15 +9,157 @@
       "address": "123 Đường Lê Trọng Tấn, Hà Nội",
       "gender": "MALE",
       "password": "1512005"
+    }
+  ],
+  "categories": [
+    {
+      "id": 1,
+      "name": "Thuốc",
+      "slug": "thuoc",
+      "children": [
+        {
+          "id": 5,
+          "name": "Giảm đau, hạ sốt",
+          "slug": "giam-dau-ha-sot",
+          "children": []
+        },
+        {
+          "id": 6,
+          "name": "Tim mạch, tiểu đường",
+          "slug": "tim-mach-tieu-duong",
+          "children": []
+        }
+      ]
     },
     {
-      "id": 1773670413203,
-      "fullName": "Nguyễn Hoàng Hiệp",
-      "phone": "0983149680",
-      "email": "htthvip@gmail.com",
-      "address": "Giải phóng",
-      "gender": "FEMALE",
-      "password": "1512005"
+      "id": 2,
+      "name": "Thực phẩm chức năng",
+      "slug": "thuc-pham-chuc-nang",
+      "children": []
+    },
+    {
+      "id": 3,
+      "name": "Dược - Mỹ phẩm",
+      "slug": "duoc-my-pham",
+      "children": []
+    },
+    {
+      "id": 4,
+      "name": "Thiết bị y tế",
+      "slug": "thiet-bi-y-te",
+      "children": []
+    }
+  ],
+  "carts": [
+    {
+      "id": 1,
+      "cartId": 1,
+      "phoneNumber": "0983149689",
+      "totalItems": 0,
+      "totalPrice": 0,
+      "items": []
+    }
+  ],
+  "products": [
+    {
+      "id": 101,
+      "name": "Nat C 1000 hỗ trợ tăng đề kháng lọ 60 viên",
+      "slug": "nat-c-1000-ho-tro-tang-de-khang-lo-60-vien",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 105000,
+      "categoryName": "Giảm đau, hạ sốt",
+      "isBestSeller": true,
+      "totalStockQuantity": 150
+    },
+    {
+      "id": 102,
+      "name": "Vitamin C sủi 1000mg",
+      "slug": "vitamin-c-sui-1000mg",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 95000,
+      "categoryName": "Thực phẩm chức năng",
+      "isBestSeller": false,
+      "totalStockQuantity": 200
+    },
+    {
+      "id": 103,
+      "name": "Canxi D3 cho xương chắc khỏe",
+      "slug": "canxi-d3-cho-xuong-chac-khoe",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 125000,
+      "categoryName": "Thực phẩm chức năng",
+      "isBestSeller": true,
+      "totalStockQuantity": 100
+    },
+    {
+      "id": 104,
+      "name": "Siro ho cho trẻ em",
+      "slug": "siro-ho-cho-tre-em",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 75000,
+      "categoryName": "Giảm đau, hạ sốt",
+      "isBestSeller": false,
+      "totalStockQuantity": 120
+    },
+    {
+      "id": 105,
+      "name": "Nước suối Aquarius 1.5L",
+      "slug": "nuoc-suoi-aquarius-1-5l",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 12000,
+      "categoryName": "Thiết bị y tế",
+      "isBestSeller": false,
+      "totalStockQuantity": 500
+    },
+    {
+      "id": 106,
+      "name": "Mặt nạ y tế 3 lớp 50 cái",
+      "slug": "mat-na-y-te-3-lop-50-cai",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 45000,
+      "categoryName": "Thiết bị y tế",
+      "isBestSeller": true,
+      "totalStockQuantity": 300
+    },
+    {
+      "id": 107,
+      "name": "Kem chống nắng SPF 50",
+      "slug": "kem-chong-nang-spf-50",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 150000,
+      "categoryName": "Dược - Mỹ phẩm",
+      "isBestSeller": false,
+      "totalStockQuantity": 80
+    },
+    {
+      "id": 108,
+      "name": "Serum Vitamin C dưỡng da",
+      "slug": "serum-vitamin-c-duong-da",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 200000,
+      "categoryName": "Dược - Mỹ phẩm",
+      "isBestSeller": true,
+      "totalStockQuantity": 60
+    },
+    {
+      "id": 109,
+      "name": "Gel rửa tay khô 100ml",
+      "slug": "gel-rua-tay-kho-100ml",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 35000,
+      "categoryName": "Thiết bị y tế",
+      "isBestSeller": false,
+      "totalStockQuantity": 400
+    },
+    {
+      "id": 110,
+      "name": "Tây y trị cảm cúm",
+      "slug": "tay-y-tri-cam-cum",
+      "imageUrl": "https://via.placeholder.com/200",
+      "price": 55000,
+      "categoryName": "Giảm đau, hạ sốt",
+      "isBestSeller": true,
+      "totalStockQuantity": 250
     }
   ]
 }

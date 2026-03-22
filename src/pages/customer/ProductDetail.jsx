@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom'; 
-
-const BASE_URL = 'http://35.247.173.19:8080/api/v1';
+import api from '../../api/axios'; // Đã import API chuẩn có gắn Token
+import { useCart } from '../../contexts/CartContext';
 
 const formatVND = (price) => {
   if (!price) return 'Liên hệ';
@@ -11,45 +10,22 @@ const formatVND = (price) => {
 };
 
 // =========================================================================
-// MOCK DATA: DỮ LIỆU BÌNH LUẬN 
+// MOCK DATA: BÌNH LUẬN (GIỮ NGUYÊN GIAO DIỆN CŨ)
 // =========================================================================
 const mockComments = [
   {
-    id: 'Cus01',
-    name: 'Cus01',
-    content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet.',
-    reply: {
-      author: 'Nhà thuốc Thái Dương',
-      content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.'
-    }
+    id: 'Cus01', name: 'Cus01',
+    content: 'Sản phẩm giao nhanh, đóng gói cẩn thận. Tôi đã sử dụng được 1 tuần và thấy rất hiệu quả.',
+    reply: { author: 'Nhà thuốc Thái Dương', content: 'Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Nhà thuốc Thái Dương. Chúc bạn nhiều sức khỏe!' }
   },
   {
-    id: 'Cus02',
-    name: 'Cus02',
-    content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet.',
-    reply: {
-      author: 'Nhà thuốc Thái Dương',
-      content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.'
-    }
-  },
-  {
-    id: 'Cus03',
-    name: 'Cus03',
-    content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet.',
-    reply: {
-      author: 'Nhà thuốc Thái Dương',
-      content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit. Exercitation veniam consequat sunt nostrud amet.'
-    }
-  },
-  {
-    id: 'Cus04',
-    name: 'Cus04',
-    content: 'Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet. Amet minim mollit non deserunt ullamco est sit aliqua dolor do amet sint. Velit officia consequat duis enim velit mollit.\nExercitation veniam consequat sunt nostrud amet.',
-    reply: null 
+    id: 'Cus02', name: 'Cus02',
+    content: 'Cho mình hỏi thuốc này có dùng được cho phụ nữ có thai không shop?',
+    reply: { author: 'Nhà thuốc Thái Dương', content: 'Chào bạn, đối với phụ nữ có thai cần tham khảo ý kiến bác sĩ chuyên khoa trước khi sử dụng sản phẩm này nhé.' }
   }
 ];
 
-// --- COMPONENT THẺ SẢN PHẨM (NÚT XEM CHI TIẾT) ---
+// --- COMPONENT THẺ SẢN PHẨM KHÁC ---
 const ProductCard = ({ item }) => {
   const navigate = useNavigate();
   return (
@@ -79,6 +55,7 @@ const ProductCard = ({ item }) => {
 const ProductDetail = () => {
   const { slug } = useParams(); 
   const navigate = useNavigate();
+  const { addToCart, fetchCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -100,11 +77,8 @@ const ProductDetail = () => {
       setIsExpanded(false); 
 
       try {
-        const [detailRes, relatedRes] = await Promise.all([
-          axios.get(`${BASE_URL}/products/${slug}`),
-          axios.get(`${BASE_URL}/products/${slug}/related?limit=5`)
-        ]);
-
+        const detailRes = await api.get(`/products/${slug}`);
+        
         if (detailRes.data.status === 200) {
           const productData = detailRes.data.data;
           setProduct(productData);
@@ -112,28 +86,30 @@ const ProductDetail = () => {
           if (productData.images && productData.images.length > 0) {
             setSelectedImage(productData.images[0]);
           } else {
-            setSelectedImage("");
+            setSelectedImage("https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png");
+          }
+
+          // Lấy sản phẩm liên quan (Dùng API Search)
+          try {
+            const relatedRes = await api.post('/products/search', { 
+              categorySlug: productData.categorySlug || "", 
+              pageNo: 0, 
+              pageSize: 5, 
+              sortBy: "createdAt", 
+              sortDir: "DESC", 
+              keyword: "" 
+            });
+            if (relatedRes.data.status === 200) {
+              setRelatedProducts(relatedRes.data.data.content || []);
+            }
+          } catch (relError) {
+             console.error("Không lấy được sp liên quan", relError);
           }
         }
-
-        if (relatedRes.data.status === 200) {
-          let relProds = relatedRes.data.data || [];
-          if (relProds.length === 0) {
-            relProds = Array(5).fill(0).map((_, i) => ({
-              id: `mock-${i}`, name: `Nat C 1000 hỗ trợ tăng đề kháng lọ 60 viên (Demo ${i+1})`, slug: `demo-product-${i}`, price: 105000, imageUrl: "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"
-            }));
-          }
-          setRelatedProducts(relProds);
-        }
-
       } catch (error) {
         console.error("Lỗi tải chi tiết:", error);
-        if (error.response && error.response.status === 404) {
-          toast.error("Không tìm thấy sản phẩm!");
-          navigate('/'); 
-        } else {
-          toast.error("Lỗi tải dữ liệu!");
-        }
+        toast.error("Không tìm thấy sản phẩm!");
+        navigate('/'); 
       } finally {
         setLoading(false);
       }
@@ -148,6 +124,67 @@ const ProductDetail = () => {
       setQuantity(prev => prev > 1 ? prev - 1 : 1);
     } else {
       setQuantity(prev => prev < product.totalStockQuantity ? prev + 1 : product.totalStockQuantity);
+    }
+  };
+
+  // =========================================================================
+  // API GỌI THÊM GIỎ HÀNG THẬT
+  // =========================================================================
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
+      navigate('/login');
+      return;
+    }
+
+    if (!product || !product.id) {
+      toast.error('Dữ liệu sản phẩm bị lỗi!');
+      return;
+    }
+
+    const loadToast = toast.loading('Đang thêm vào giỏ hàng...');
+    try {
+      const res = await api.post('/cart/items', {
+        productId: product.id, // Truyền ID kiểu số nguyên chuẩn API
+        quantity: quantity
+      });
+
+      if (res.data.status === 200 || res.status === 200) {
+        toast.success('Đã thêm sản phẩm vào giỏ hàng!', { id: loadToast });
+        window.dispatchEvent(new Event('cartUpdated')); // Bắn sự kiện để Header tự cập nhật số
+        // Fetch cart từ context để update local state
+        setTimeout(() => fetchCart(), 200);
+      } else {
+        toast.error(res.data.message || 'Lỗi thêm vào giỏ hàng!', { id: loadToast });
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Lỗi kết nối khi thêm vào giỏ!', { id: loadToast });
+    }
+  };
+
+  // =========================================================================
+  // API GỌI MUA NGAY (THÊM GIỎ + CHUYỂN TRANG)
+  // =========================================================================
+  const handleBuyNow = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để mua hàng!');
+      navigate('/login');
+      return;
+    }
+
+    const loadToast = toast.loading('Đang xử lý...');
+    try {
+      await api.post('/cart/items', {
+        productId: product.id,
+        quantity: quantity
+      });
+      toast.success('Đã đưa vào giỏ, chuyển sang thanh toán...', { id: loadToast });
+      window.dispatchEvent(new Event('cartUpdated'));
+      navigate('/cart');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Lỗi khi xử lý đơn hàng!', { id: loadToast });
     }
   };
 
@@ -228,13 +265,13 @@ const ProductDetail = () => {
             <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-[450px]">
                 <button 
                   disabled={isOutOfStock}
-                  onClick={() => toast.success("Đang chuyển đến trang thanh toán!")}
+                  onClick={handleBuyNow}
                   className={`flex-1 py-3.5 rounded-lg text-[14px] font-bold uppercase transition-colors shadow-md ${isOutOfStock ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' : 'bg-[#eef8ef] text-[#2D982A] border-2 border-[#2D982A] hover:bg-green-100'}`}>
                   {isOutOfStock ? "Tạm hết hàng" : "Chọn mua"}
                 </button>
                 <button 
                   disabled={isOutOfStock}
-                  onClick={() => toast.success("Đã thêm vào giỏ hàng!")}
+                  onClick={handleAddToCart}
                   className={`flex-1 py-3.5 rounded-lg text-[14px] font-bold uppercase transition-colors shadow-md ${isOutOfStock ? 'bg-gray-300 text-white cursor-not-allowed' : 'bg-[#2D982A] text-white border-2 border-[#2D982A] hover:bg-green-700'}`}>
                   Thêm vào giỏ hàng
                 </button>
@@ -277,18 +314,12 @@ const ProductDetail = () => {
             </div>
         </div>
 
-        {/* =========================================================================
-            BÌNH LUẬN 
-            ========================================================================= */}
+        {/* BÌNH LUẬN */}
         <div className="mb-16 w-full max-w-[950px]">
             <div className="bg-white border border-gray-200 rounded-2xl p-8">
-                
-                {/* 1. KHỐI FORM BÌNH LUẬN */}
                 <h2 className="text-[26px] font-black text-black uppercase tracking-wide mb-8">BÌNH LUẬN</h2>
-                
                 <form className="flex flex-col mb-12">
                     <div className="flex flex-wrap items-center gap-6 mb-4">
-                        {/* Radio Gender */}
                         <div className="flex items-center space-x-6">
                             <label className="flex items-center cursor-pointer text-[15px] font-medium text-black">
                                 <input type="radio" name="gender" value="anh" className="w-[18px] h-[18px] accent-[#2D982A] mr-2 cursor-pointer" />
@@ -299,72 +330,32 @@ const ProductDetail = () => {
                                 Chị
                             </label>
                         </div>
-                        
-                        {/* Inputs */}
                         <div className="relative">
                             <input type="text" placeholder="Họ và tên" className="border border-gray-400 rounded p-2.5 text-[14px] w-[260px] outline-none focus:border-[#2D982A] placeholder-gray-500" />
                             <span className="absolute left-[65px] top-1/2 -translate-y-1/2 text-red-500">*</span>
                         </div>
                         <input type="text" placeholder="Số điện thoại" className="border border-gray-400 rounded p-2.5 text-[14px] w-[260px] outline-none focus:border-[#2D982A] placeholder-gray-500" />
                     </div>
-
-                    {/* Textarea */}
-                    <textarea 
-                        placeholder="Nhập bình luận..." 
-                        className="w-full border border-gray-400 rounded-lg p-4 text-[15px] min-h-[140px] outline-none focus:border-[#2D982A] resize-y text-gray-800 placeholder-gray-500"
-                    ></textarea>
-
-                    {/* Nút Submit */}
+                    <textarea placeholder="Nhập bình luận..." className="w-full border border-gray-400 rounded-lg p-4 text-[15px] min-h-[140px] outline-none focus:border-[#2D982A] resize-y text-gray-800 placeholder-gray-500"></textarea>
                     <div className="flex justify-end mt-5">
-                        <button 
-                            type="button" 
-                            onClick={() => toast.success("Đã gửi bình luận!")} 
-                            className="bg-[#2D982A] text-white font-bold text-[15px] px-8 py-2.5 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
-                        >
-                            Gửi bình luận
-                        </button>
+                        <button type="button" onClick={() => toast.success("Đã gửi bình luận!")} className="bg-[#2D982A] text-white font-bold text-[15px] px-8 py-2.5 rounded-lg hover:bg-green-700 transition-colors shadow-sm">Gửi bình luận</button>
                     </div>
                 </form>
 
-                {/* 2. KHỐI DANH SÁCH BÌNH LUẬN (Cus01, Cus02...) */}
                 <div className="space-y-4">
                     {mockComments.map(comment => (
                         <div key={comment.id} className="border border-gray-200 rounded-xl p-6">
-                            {/* Tên khách hàng */}
                             <h4 className="text-[17px] font-bold text-gray-900 mb-3">{comment.name}</h4>
-                            
-                            {/* Nội dung KH */}
-                            <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line mb-4">
-                                {comment.content}
-                            </p>
-
-                            {/* Khối phản hồi của Nhà thuốc (Viền xanh) */}
+                            <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line mb-4">{comment.content}</p>
                             {comment.reply && (
                                 <div className="border border-[#2D982A] rounded-lg p-5 bg-white">
-                                    <h5 className="text-[16px] font-bold text-[#2D982A] mb-2">
-                                        {comment.reply.author}
-                                    </h5>
-                                    <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line">
-                                        {comment.reply.content}
-                                    </p>
+                                    <h5 className="text-[16px] font-bold text-[#2D982A] mb-2">{comment.reply.author}</h5>
+                                    <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line">{comment.reply.content}</p>
                                 </div>
                             )}
                         </div>
                     ))}
                 </div>
-
-                {/* 3. PHÂN TRANG (Pagination) */}
-                <div className="flex justify-center items-center space-x-3 mt-10">
-                    <button className="flex items-center space-x-1 px-4 py-1.5 border border-gray-300 rounded text-gray-400 text-[14px] font-medium cursor-not-allowed">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
-                        <span>Trước</span>
-                    </button>
-                    <button className="flex items-center space-x-1 px-4 py-1.5 border border-[#2D982A] rounded text-black text-[14px] font-bold hover:bg-green-50 transition cursor-pointer">
-                        <span>Sau</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="#2D982A" className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-                    </button>
-                </div>
-
             </div>
         </div>
 

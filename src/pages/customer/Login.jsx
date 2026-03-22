@@ -1,17 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import { Link } from "react-router-dom";
+import { toast } from "react-hot-toast";
+import { useCart } from "../../contexts/CartContext";
 
 const Login = () => {
 
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useCart();
+
+  // Auto-fill phone từ đăng ký xong
+  useEffect(() => {
+    const registeredPhone = localStorage.getItem('registeredPhone');
+    if (registeredPhone) {
+      setPhone(registeredPhone);
+      localStorage.removeItem('registeredPhone');
+      toast.success('Vui lòng nhập mật khẩu để đăng nhập!');
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    
+    if (!phone || !password) {
+      toast.error("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
+    setLoading(true);
 
     try {
 
@@ -20,13 +41,29 @@ const Login = () => {
         password,
       });
 
-      localStorage.setItem("token", res.data.data.token);
+      if (res.data.status === 200) {
+        const token = res.data.data.token;
+        const refreshTokenValue = res.data.data.refreshToken;
+        const userData = {
+          phone: res.data.data.phone,
+          fullName: res.data.data.fullName,
+          role: res.data.data.role,
+        };
 
-      navigate("/");
+        // Lưu token, refreshToken và user data vào context (sẽ tự động fetch cart)
+        login(userData, token, refreshTokenValue);
+
+        toast.success("Đăng nhập thành công!");
+        // Chờ context update trước khi navigate
+        setTimeout(() => navigate("/"), 500);
+      }
 
     } catch (err) {
-      alert("Sai số điện thoại hoặc mật khẩu");
+      const errorMsg = err.response?.data?.message || "Sai số điện thoại hoặc mật khẩu";
+      toast.error(errorMsg);
       console.log(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -67,8 +104,10 @@ const Login = () => {
 
             <input
               type="text"
-              className="w-full border-b border-gray-400 bg-transparent focus:outline-none focus:border-green-500"
+              value={phone}
+              className="w-full border-b border-gray-400 bg-transparent focus:outline-none focus:border-green-500 py-2"
               onChange={(e) => setPhone(e.target.value)}
+              disabled={loading}
             />
 
           </div>
@@ -83,8 +122,10 @@ const Login = () => {
 
             <input
               type="password"
-              className="w-full border-b border-gray-400 bg-transparent focus:outline-none focus:border-green-500"
+              value={password}
+              className="w-full border-b border-gray-400 bg-transparent focus:outline-none focus:border-green-500 py-2"
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
             />
 
           </div>
@@ -110,9 +151,10 @@ const Login = () => {
 
           {/* BUTTON */}
           <button
-            className="w-full bg-green-600 text-white py-3 rounded-full hover:bg-green-700 transition"
+            disabled={loading}
+            className="w-full bg-green-600 text-white py-3 rounded-full hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            ĐĂNG NHẬP
+            {loading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP"}
           </button>
 
 
