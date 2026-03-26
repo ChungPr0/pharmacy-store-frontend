@@ -18,6 +18,7 @@ import Products from '../pages/admin/Products';
 import Orders from '../pages/admin/Orders';
 import Users from '../pages/admin/Users';
 import Categories from '../pages/admin/Categories';
+import Checkout from '../pages/customer/Checkout';
 
 import ProtectedAdminRoute from '../components/ProtectedAdminRoute';
 
@@ -38,6 +39,7 @@ export default function AppRoutes() {
           <Route path="news" element={<News />} />
           <Route path="support" element={<Support />} />
           <Route path="category/:slug" element={<Category />} />
+          <Route path="checkout" element={<Checkout />} />
         </Route>
 
         {/* ADMIN ROUTES */}

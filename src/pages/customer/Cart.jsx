@@ -293,7 +293,7 @@ const Cart = () => {
 
               <button 
                 disabled={isEmpty || selectedItems.length === 0}
-                onClick={() => navigate('/checkout')} 
+                onClick={() => navigate('/checkout', { state: { selectedItems } })}
                 className={`w-full py-3.5 rounded-lg font-bold text-[15px] text-white uppercase tracking-wide transition-all shadow-md ${
                   (isEmpty || selectedItems.length === 0) 
                   ? 'bg-gray-300 cursor-not-allowed' 
