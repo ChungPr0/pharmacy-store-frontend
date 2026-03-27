@@ -1,7 +1,7 @@
 
 import logo_dk from '../assets/register/logo_dangky.jpg';
 import logo from '../assets/home/logo_ThaiDuong.png';
-import banner from '../assets/home/Banner.jpg';
+import banner from '../assets/home/Banner_1.png';
 import safety from '../assets/home/content_mua_sam_an_toan.jpg';
 
 import ncs from '../assets/home/NCS.png';
