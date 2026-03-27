@@ -1,0 +1,48 @@
+name: Deploy React FE to VPS
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies and Build
+        run: |
+          npm ci
+          npm run build
+        # Lưu ý: Thư mục sinh ra là 'dist' (Vite) hoặc 'build' (CRA)
+
+      - name: Copy files to VPS
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          # Nhớ sửa 'dist' thành 'build' nếu FE dùng CRA
+          source: "dist,Dockerfile,nginx.conf"
+          target: "/opt/pharmacy-frontend"
+
+      - name: Docker Build and Run
+        uses: appleboy/ssh-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            cd /opt/pharmacy-frontend
+            sudo docker build -t pharmacy-fe-image .
+            sudo docker rm -f pharmacy-fe-container || true
+            sudo docker run -d -p 3000:80 --network pharmacy-net --name pharmacy-fe-container --restart unless-stopped pharmacy-fe-image
+            sudo docker image prune -f
