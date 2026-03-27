@@ -16,6 +16,11 @@ const Checkout = () => {
   const [cartData, setCartData] = useState({ items: [], totalItems: 0, totalPrice: 0 });
   const [loading, setLoading] = useState(true);
 
+  // Modal State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [orderCode, setOrderCode] = useState('');
+
+  // Form State
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -52,9 +57,6 @@ const Checkout = () => {
             return;
           }
           setCartData(data);
-          
-          // Debug xem BE đã trả về trường id của giỏ hàng chưa
-          console.log("Dữ liệu 1 item trong giỏ:", data.items[0]);
         }
       } catch (error) {
         toast.error('Không thể tải dữ liệu đơn hàng');
@@ -94,18 +96,17 @@ const Checkout = () => {
         fullAddress += ` (Ghi chú: ${formData.note.trim()})`;
     }
 
-    // LẤY ID GIỎ HÀNG: Ưu tiên lấy trường cartItemId, nếu không có thì lấy id, bí quá mới lấy productId
-    // 3. Lấy danh sách Product IDs từ giỏ hàng
+    // Lấy mảng ID sản phẩm khách đã chọn mua
     const listProductIds = cartData.items.map(item => item.productId);
 
-    // 4. Tạo Payload chuẩn API Contract mới nhất
+    // Payload chuẩn theo API Contract mới nhất
     const payload = {
         receiverName: formData.fullName.trim(),
         phone: formData.phone.trim(),
         shippingAddressText: fullAddress, 
         paymentMethod: paymentMethod,
         paymentToken: null,
-        cartItemIds: listProductIds // <-- Đổi tên key thành productIds cho khớp JSON
+        productIds: listProductIds 
     };
 
     const loadToast = toast.loading('Đang xử lý đơn hàng...');
@@ -113,11 +114,10 @@ const Checkout = () => {
       const res = await api.post('/orders/checkout', payload);
       
       if (res.data.status === 200) {
-        const orderCode = res.data.data?.orderCode || '';
-        toast.success(`Đặt hàng thành công! Mã đơn: ${orderCode}`, { id: loadToast });
-        
-        window.dispatchEvent(new Event('cartUpdated')); 
-        navigate('/'); 
+        toast.success('Xử lý thành công!', { id: loadToast });
+        setOrderCode(res.data.data?.orderCode || ''); // Lưu lại mã đơn hàng (nếu cần hiển thị)
+        setShowSuccessModal(true); // Hiển thị Popup thành công
+        window.dispatchEvent(new Event('cartUpdated')); // Update số lượng giỏ hàng trên Header
       } else {
         toast.error(res.data.message || 'Có lỗi xảy ra khi đặt hàng', { id: loadToast });
       }
@@ -134,8 +134,44 @@ const Checkout = () => {
   const grandTotal = cartData.totalPrice + shippingFee;
 
   return (
-    <div className="flex-1 w-full bg-[#f8f9fa] pb-20 pt-6 antialiased">
-      <div className="max-w-[1200px] mx-auto px-6 xl:px-0">
+    <div className="flex-1 w-full bg-[#f8f9fa] pb-20 pt-6 antialiased relative">
+      
+      {/* POPUP THÔNG BÁO THÀNH CÔNG */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm">
+          <div className="bg-[#eef8ef] rounded-2xl shadow-2xl w-[90%] max-w-[450px] overflow-hidden transform scale-100 transition-transform">
+            {/* Header Popup */}
+            <div className="bg-[#2D982A] py-4 flex items-center justify-center">
+              <h2 className="text-white font-black text-[18px] uppercase tracking-wide">Đặt hàng thành công</h2>
+            </div>
+            
+            {/* Body Popup */}
+            <div className="p-8 flex flex-col items-center text-center">
+              <p className="text-[#2D982A] font-bold text-[18px] mb-2">Đặt hàng thành công!</p>
+              {orderCode && <p className="text-gray-800 font-bold mb-1">Mã đơn hàng: {orderCode}</p>}
+              <p className="text-gray-600 text-[14px] mb-8">Vui lòng theo dõi tình trạng đơn hàng</p>
+              
+              <div className="flex space-x-4 w-full">
+                <button 
+                  onClick={() => navigate('/')} 
+                  className="flex-1 py-2.5 rounded-lg border-2 border-[#2D982A] bg-white text-[#2D982A] font-bold text-[14px] hover:bg-[#eef8ef] transition-colors"
+                >
+                  Về trang chủ
+                </button>
+                <button 
+                  onClick={() => navigate('/orders')} 
+                  className="flex-1 py-2.5 rounded-lg bg-[#2D982A] text-white font-bold text-[14px] hover:bg-green-700 transition-colors shadow-sm"
+                >
+                  Xem chi tiết
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NỘI DUNG TRANG CHECKOUT (Bên dưới) */}
+      <div className={`max-w-[1200px] mx-auto px-6 xl:px-0 ${showSuccessModal ? 'pointer-events-none blur-[1px]' : ''}`}>
         
         {/* BREADCRUMB */}
         <div className="flex items-center space-x-2 text-[14px] text-gray-500 mb-6">
