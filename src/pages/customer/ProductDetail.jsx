@@ -1,61 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom'; 
-import api from '../../api/axios'; // Đã import API chuẩn có gắn Token
+import api from '../../api/axios'; 
 import { useCart } from '../../contexts/CartContext';
+import ProductCard from '../../components/ProductCard';
 
 const formatVND = (price) => {
   if (!price) return 'Liên hệ';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-// =========================================================================
-// MOCK DATA: BÌNH LUẬN (GIỮ NGUYÊN GIAO DIỆN CŨ)
-// =========================================================================
 const mockComments = [
   {
-    id: 'Cus01', name: 'Cus01',
+    id: 'Cus01', name: 'Đỗ Nam Trung',
     content: 'Sản phẩm giao nhanh, đóng gói cẩn thận. Tôi đã sử dụng được 1 tuần và thấy rất hiệu quả.',
     reply: { author: 'Nhà thuốc Thái Dương', content: 'Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Nhà thuốc Thái Dương. Chúc bạn nhiều sức khỏe!' }
   },
   {
-    id: 'Cus02', name: 'Cus02',
+    id: 'Cus02', name: 'Kim Song Hưng',
     content: 'Cho mình hỏi thuốc này có dùng được cho phụ nữ có thai không shop?',
     reply: { author: 'Nhà thuốc Thái Dương', content: 'Chào bạn, đối với phụ nữ có thai cần tham khảo ý kiến bác sĩ chuyên khoa trước khi sử dụng sản phẩm này nhé.' }
   }
 ];
 
-// --- COMPONENT THẺ SẢN PHẨM KHÁC ---
-const ProductCard = ({ item }) => {
-  const navigate = useNavigate();
-  return (
-    <div 
-      onClick={() => navigate(`/product/${item.slug}`)} 
-      className="bg-[#f5f5f5] rounded-2xl border border-gray-200 hover:border-[#2D982A] transition-all duration-300 flex flex-col cursor-pointer w-full p-3"
-    >
-      <div className="bg-white rounded-xl h-[180px] flex items-center justify-center p-3 mb-4 shadow-sm relative">
-        <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-300"
-             onError={(e) => { e.target.onerror = null; e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; }} />
-      </div>
-      <div className="flex flex-col flex-1 px-1">
-        <h3 className="text-[13px] text-gray-800 line-clamp-2 min-h-[38px] mb-2 leading-snug font-medium">
-          {item.name}
-        </h3>
-        <p className="text-black font-extrabold text-[15px] mb-4">
-          {formatVND(item.price)}
-        </p>
-        <button className="mt-auto w-full py-2 border border-gray-300 rounded-lg font-medium text-[13px] text-gray-700 bg-transparent hover:bg-gray-200 hover:text-black transition-colors duration-300">
-          Xem chi tiết
-        </button>
-      </div>
-    </div>
-  );
-};
-
 const ProductDetail = () => {
   const { slug } = useParams(); 
   const navigate = useNavigate();
-  const { addToCart, fetchCart } = useCart();
+  const { fetchCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -89,18 +60,11 @@ const ProductDetail = () => {
             setSelectedImage("https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png");
           }
 
-          // Lấy sản phẩm liên quan (Dùng API Search)
+          // Gọi API Sản phẩm liên quan (Sử dụng API mới theo chuẩn Contract)
           try {
-            const relatedRes = await api.post('/products/search', { 
-              categorySlug: productData.categorySlug || "", 
-              pageNo: 0, 
-              pageSize: 5, 
-              sortBy: "createdAt", 
-              sortDir: "DESC", 
-              keyword: "" 
-            });
+            const relatedRes = await api.get(`/products/${slug}/related?limit=5`);
             if (relatedRes.data.status === 200) {
-              setRelatedProducts(relatedRes.data.data.content || []);
+              setRelatedProducts(relatedRes.data.data || []);
             }
           } catch (relError) {
              console.error("Không lấy được sp liên quan", relError);
@@ -108,8 +72,8 @@ const ProductDetail = () => {
         }
       } catch (error) {
         console.error("Lỗi tải chi tiết:", error);
-        toast.error("Không tìm thấy sản phẩm!");
-        navigate('/'); 
+        toast.error(error.response?.data?.message || "Không tìm thấy sản phẩm!");
+        navigate('/'); // Điều hướng về trang chủ nếu lỗi 404
       } finally {
         setLoading(false);
       }
@@ -146,14 +110,13 @@ const ProductDetail = () => {
     const loadToast = toast.loading('Đang thêm vào giỏ hàng...');
     try {
       const res = await api.post('/cart/items', {
-        productId: product.id, // Truyền ID kiểu số nguyên chuẩn API
+        productId: product.id, 
         quantity: quantity
       });
 
       if (res.data.status === 200 || res.status === 200) {
         toast.success('Đã thêm sản phẩm vào giỏ hàng!', { id: loadToast });
-        window.dispatchEvent(new Event('cartUpdated')); // Bắn sự kiện để Header tự cập nhật số
-        // Fetch cart từ context để update local state
+        window.dispatchEvent(new Event('cartUpdated'));
         setTimeout(() => fetchCart(), 200);
       } else {
         toast.error(res.data.message || 'Lỗi thêm vào giỏ hàng!', { id: loadToast });
