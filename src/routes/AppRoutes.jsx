@@ -11,6 +11,7 @@ import Login from '../pages/customer/Login';
 import ForgotPassword from '../pages/customer/ForgotPassword';
 import Category from '../pages/customer/Category';
 import SearchResults from '../pages/customer/SearchResults';
+import CustomerOrders from '../pages/customer/Orders';
 
 import AdminLayout from '../layouts/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
@@ -40,6 +41,7 @@ export default function AppRoutes() {
           <Route path="support" element={<Support />} />
           <Route path="category/:slug" element={<Category />} />
           <Route path="checkout" element={<Checkout />} />
+          <Route path="orders" element={<CustomerOrders />} /> 
         </Route>
 
         {/* ADMIN ROUTES */}
