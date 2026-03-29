@@ -3,65 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
 import { IMAGES } from '../../constants/images';
-
-const formatVND = (price) => {
-  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-};
-
-// --- COMPONENT THẺ SẢN PHẨM ---
-const ProductCard = ({ item }) => {
-  const navigate = useNavigate();
-
-  const handleAddToCart = async (e) => {
-    e.stopPropagation(); 
-    // Ngăn sự kiện click lan ra thẻ cha (chuyển trang)
-    
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
-      navigate('/login');
-      return;
-    }
-
-    const loadToast = toast.loading('Đang thêm vào giỏ...');
-    try {
-      // API Thêm giỏ hàng chuẩn: Dùng productId, không dùng slug
-      const res = await api.post('/cart/items', { productId: item.id, quantity: 1 });
-      if (res.data.status === 200 || res.status === 200) {
-        toast.success('Đã thêm sản phẩm vào giỏ hàng', { id: loadToast });
-        window.dispatchEvent(new Event('cartUpdated')); 
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Lỗi khi thêm vào giỏ hàng', { id: loadToast });
-    }
-  };
-
-  return (
-    <div 
-      onClick={() => navigate(`/product/${item.slug}`)} 
-      className="bg-[#f9fafb] rounded-xl border border-gray-200 hover:border-[#2D982A] transition-all duration-300 group flex flex-col overflow-hidden shadow-sm hover:shadow-md cursor-pointer w-full"
-    >
-      <div className="bg-white m-2 rounded-lg h-[190px] flex items-center justify-center p-3 relative shadow-sm">
-        <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" 
-             onError={(e) => { e.target.onerror = null; e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; }} />
-      </div>
-      <div className="p-4 flex flex-col flex-1">
-        <h3 className="text-[14px] font-bold text-gray-800 line-clamp-2 min-h-[42px] mb-2 leading-snug group-hover:text-[#2D982A] transition-colors">
-          {item.name}
-        </h3>
-        <p className="text-black font-black text-[16px] mb-4">
-          {formatVND(item.price)}
-        </p>
-        <button 
-          onClick={handleAddToCart}
-          className="mt-auto w-full py-2 border border-gray-300 rounded-lg font-bold text-[13px] text-gray-700 bg-white hover:bg-[#2D982A] hover:text-white hover:border-[#2D982A] transition-colors duration-300"
-        >
-          Thêm vào giỏ hàng
-        </button>
-      </div>
-    </div>
-  );
-};
+import ProductCard from '../../components/ProductCard';
 
 const Category = () => {
   const { slug } = useParams(); // Lấy slug danh mục cha từ URL (VD: /category/thuoc)

@@ -3,52 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
 import { useCart } from '../../contexts/CartContext';
+import ProductCard from '../../components/ProductCard';
 
 const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-};
-
-// --- COMPONENT THẺ SẢN PHẨM (Dùng cho phần Sản phẩm khác) ---
-const ProductCard = ({ item }) => {
-  const navigate = useNavigate();
-
-  const handleAddToCart = async (e) => {
-    e.stopPropagation();
-    const loadToast = toast.loading('Đang thêm vào giỏ...');
-    try {
-      await api.post('/cart/items', { productId: item.id, quantity: 1 });
-      toast.success('Đã thêm sản phẩm vào giỏ hàng', { id: loadToast });
-      window.dispatchEvent(new Event('cartUpdated')); 
-    } catch (error) {
-      toast.error('Lỗi khi thêm vào giỏ hàng', { id: loadToast });
-    }
-  };
-
-  return (
-    <div 
-      onClick={() => navigate(`/product/${item.slug}`)} 
-      className="bg-[#f9fafb] rounded-xl border border-gray-100 hover:border-[#2D982A] transition-all duration-300 group flex flex-col overflow-hidden shadow-sm hover:shadow-md cursor-pointer w-full"
-    >
-      <div className="bg-white m-2 rounded-lg h-[180px] flex items-center justify-center p-3 relative">
-        <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" 
-             onError={(e) => { e.target.onerror = null; e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; }} />
-      </div>
-      <div className="p-3.5 flex flex-col flex-1">
-        <h3 className="text-[14px] font-bold text-gray-800 line-clamp-2 min-h-[42px] mb-2 leading-snug group-hover:text-[#2D982A] transition-colors">
-          {item.name}
-        </h3>
-        <p className="text-black font-extrabold text-[16px] mb-4">
-          {formatVND(item.price)}
-        </p>
-        <button 
-          onClick={handleAddToCart}
-          className="mt-auto w-full py-2 border border-gray-300 rounded-lg font-bold text-[13px] text-gray-700 bg-transparent hover:bg-gray-100 transition-colors duration-300"
-        >
-          Thêm vào giỏ hàng
-        </button>
-      </div>
-    </div>
-  );
 };
 
 const Cart = () => {

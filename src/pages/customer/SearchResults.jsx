@@ -2,76 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../../api/axios';
+import ProductCard from '../../components/ProductCard';
 
 const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-};
-
-// --- COMPONENT THẺ SẢN PHẨM (Thiết kế giống ảnh mẫu của bạn) ---
-const SearchProductCard = ({ item }) => {
-  const navigate = useNavigate();
-
-  const handleAddToCart = async (e) => {
-    e.stopPropagation(); 
-    const token = localStorage.getItem('token');
-    if (!token) {
-      toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
-      navigate('/login');
-      return;
-    }
-
-    const loadToast = toast.loading('Đang thêm vào giỏ...');
-    try {
-      const res = await api.post('/cart/items', { productId: item.id, quantity: 1 });
-      if (res.data.status === 200 || res.status === 200) {
-        toast.success('Đã thêm sản phẩm vào giỏ hàng', { id: loadToast });
-        window.dispatchEvent(new Event('cartUpdated')); 
-      }
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Lỗi khi thêm vào giỏ hàng', { id: loadToast });
-    }
-  };
-
-  return (
-    <div 
-      onClick={() => navigate(`/product/${item.slug}`)} 
-      className="bg-white rounded-xl border border-gray-100 hover:border-[#2D982A] hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden w-full p-4 cursor-pointer"
-    >
-      {/* Khung ảnh */}
-      <div className="h-[200px] flex items-center justify-center mb-4 relative">
-        <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-500" 
-             onError={(e) => { e.target.onerror = null; e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; }} />
-      </div>
-
-      {/* Thông tin */}
-      <div className="flex flex-col flex-1">
-        <h3 className="text-[15px] font-bold text-gray-800 line-clamp-2 min-h-[44px] mb-3 leading-snug hover:text-[#2D982A] transition-colors">
-          {item.name}
-        </h3>
-        
-        {/* Mock Data cho các Tag màu xanh nhạt giống ảnh (Vì API hiện chưa trả về tag này) */}
-        <div className="flex flex-wrap gap-2 mb-4">
-            <span className="bg-[#f0f8ff] text-[#0068ff] text-[11px] font-medium px-2 py-1 rounded">Chính hãng</span>
-            <span className="bg-[#f0f8ff] text-[#0068ff] text-[11px] font-medium px-2 py-1 rounded">{item.categoryName || 'Sức khỏe'}</span>
-        </div>
-
-        {/* Giá tiền (Màu đỏ giống ảnh mẫu) */}
-        <div className="mt-auto mb-4">
-          <p className="text-[#d0021b] font-black text-[18px]">
-            {formatVND(item.price)}
-          </p>
-        </div>
-
-        {/* Nút màu xanh lá đặc */}
-        <button 
-          onClick={handleAddToCart}
-          className="w-full bg-[#2D982A] text-white py-2.5 rounded-lg font-bold text-[14px] hover:bg-green-700 transition-colors duration-300 shadow-sm"
-        >
-          Thêm vào giỏ
-        </button>
-      </div>
-    </div>
-  );
 };
 
 const SearchResults = () => {
@@ -162,7 +96,7 @@ const SearchResults = () => {
             {loading ? (
                  Array(10).fill(0).map((_, i) => <div key={i} className="bg-white animate-pulse h-[360px] rounded-xl border border-gray-100"></div>)
             ) : products.length > 0 ? (
-                 products.map(item => <SearchProductCard key={item.id} item={item} />)
+                 products.map(item => <ProductCard key={item.id} item={item} showAddToCart={true} />)
             ) : (
                 <div className="col-span-full flex flex-col items-center justify-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1} stroke="currentColor" className="w-24 h-24 text-gray-300 mb-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007zM8.625 10.5a.375.375 0 11-.75 0 .375.375 0 01.75 0zm7.5 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>
