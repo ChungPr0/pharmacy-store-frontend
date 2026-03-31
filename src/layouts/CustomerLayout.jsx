@@ -86,7 +86,7 @@ export default function CustomerLayout() {
       <div className="sticky top-0 z-50 w-full shadow-sm flex flex-col flex-shrink-0">
         
         {/* THANH PROMO TRÊN CÙNG */}
-        {showPromo && (
+        {showPromo && !token && (
           <div className="bg-[#2D982A] text-white relative flex justify-center items-center py-1 px-4">
             <button onClick={() => setShowPromo(false)} className="absolute left-4 top-1/2 -translate-y-1/2 cursor-pointer hover:opacity-70 transition-opacity">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -133,12 +133,40 @@ export default function CustomerLayout() {
                 <div className="text-[12px] text-gray-500">Hotline: <span className="text-[14px] font-bold text-black">1800 29YY</span></div>
                 
                 {user ? (
-                  <div className="flex items-center space-x-2 border-l border-gray-200 pl-3">
-                    <span className="text-[12px] text-gray-500">Chào, <strong className="text-[#2D982A]">{user.fullName || user.name || "Khách"}</strong></span>
-                    <span onClick={() => { logout(); navigate('/login'); toast.success('Đã đăng xuất!'); }} className="text-[12px] font-bold text-gray-400 hover:text-red-500 cursor-pointer transition-colors">Đăng xuất</span>
+                  // KHỐI ĐÃ ĐĂNG NHẬP (CÓ AVATAR + DROPDOWN)
+                  <div className="relative group flex items-center border-l border-gray-200 pl-4 ml-2 cursor-pointer py-1">
+                    
+                    {/* Phần hiển thị Tên + Avatar (Click để vào Profile) */}
+                    <div onClick={() => navigate('/profile')} className="flex items-center space-x-2.5">
+                      <span className="text-[15px] font-bold text-black tracking-tight">{user.fullName || user.name || "Khách hàng"}</span>
+                      <div className="w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-[#ffedd5] shadow-sm">
+                        <img src={user.avatarUrl || "https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=ffedd5"} alt="Avatar" className="w-full h-full object-cover" />
+                      </div>
+                    </div>
+
+                    {/* Menu thả xuống (Hiển thị khi hover) */}
+                    <div className="absolute top-[100%] right-0 pt-2 w-[180px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                      <ul className="bg-white border border-gray-100 rounded-lg shadow-xl py-2 overflow-hidden">
+                        <li onClick={() => navigate('/profile')} className="px-4 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-medium flex items-center space-x-2 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                          <span>Hồ sơ cá nhân</span>
+                        </li>
+                        <li onClick={() => navigate('/orders')} className="px-4 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-medium flex items-center space-x-2 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
+                          <span>Lịch sử mua hàng</span>
+                        </li>
+                        <div className="w-full h-[1px] bg-gray-100 my-1"></div>
+                        <li onClick={() => { logout(); navigate('/login'); toast.success('Đã đăng xuất!'); }} className="px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 cursor-pointer font-medium flex items-center space-x-2 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
+                          <span>Đăng xuất</span>
+                        </li>
+                      </ul>
+                    </div>
+
                   </div>
                 ) : (
-                  <div onClick={() => navigate('/login')} className="flex items-center space-x-1 cursor-pointer hover:text-[#2D982A] group border-l border-gray-200 pl-3">
+                  // KHỐI CHƯA ĐĂNG NHẬP
+                  <div onClick={() => navigate('/login')} className="flex items-center space-x-1 cursor-pointer hover:text-[#2D982A] group border-l border-gray-200 pl-3 ml-2">
                     <span className="text-[13px] font-bold text-gray-600 group-hover:text-[#2D982A]">Đăng nhập</span>
                   </div>
                 )}

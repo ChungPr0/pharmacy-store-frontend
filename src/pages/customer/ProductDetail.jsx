@@ -3,7 +3,6 @@ import { toast } from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom'; 
 import api from '../../api/axios'; 
 import { useCart } from '../../contexts/CartContext';
-import ProductCard from '../../components/ProductCard';
 
 const formatVND = (price) => {
   if (!price) return 'Liên hệ';
@@ -12,16 +11,43 @@ const formatVND = (price) => {
 
 const mockComments = [
   {
-    id: 'Cus01', name: 'Đỗ Nam Trung',
+    id: 'Cus01', name: 'Cus01',
     content: 'Sản phẩm giao nhanh, đóng gói cẩn thận. Tôi đã sử dụng được 1 tuần và thấy rất hiệu quả.',
     reply: { author: 'Nhà thuốc Thái Dương', content: 'Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Nhà thuốc Thái Dương. Chúc bạn nhiều sức khỏe!' }
   },
   {
-    id: 'Cus02', name: 'Kim Song Hưng',
+    id: 'Cus02', name: 'Cus02',
     content: 'Cho mình hỏi thuốc này có dùng được cho phụ nữ có thai không shop?',
     reply: { author: 'Nhà thuốc Thái Dương', content: 'Chào bạn, đối với phụ nữ có thai cần tham khảo ý kiến bác sĩ chuyên khoa trước khi sử dụng sản phẩm này nhé.' }
   }
 ];
+
+// --- COMPONENT THẺ SẢN PHẨM KHÁC ---
+const ProductCard = ({ item }) => {
+  const navigate = useNavigate();
+  return (
+    <div 
+      onClick={() => navigate(`/product/${item.slug}`)} 
+      className="bg-[#f5f5f5] rounded-2xl border border-gray-200 hover:border-[#2D982A] transition-all duration-300 flex flex-col cursor-pointer w-full p-3"
+    >
+      <div className="bg-white rounded-xl h-[180px] flex items-center justify-center p-3 mb-4 shadow-sm relative">
+        <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain hover:scale-105 transition-transform duration-300"
+             onError={(e) => { e.target.onerror = null; e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; }} />
+      </div>
+      <div className="flex flex-col flex-1 px-1">
+        <h3 className="text-[13px] text-gray-800 line-clamp-2 min-h-[38px] mb-2 leading-snug font-medium">
+          {item.name}
+        </h3>
+        <p className="text-black font-extrabold text-[15px] mb-4">
+          {formatVND(item.price)}
+        </p>
+        <button className="mt-auto w-full py-2 border border-gray-300 rounded-lg font-medium text-[13px] text-gray-700 bg-transparent hover:bg-gray-200 hover:text-black transition-colors duration-300">
+          Xem chi tiết
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const ProductDetail = () => {
   const { slug } = useParams(); 
@@ -250,7 +276,7 @@ const ProductDetail = () => {
               <h2 className="text-[26px] font-black text-black uppercase mb-10 tracking-wide">Mô tả sản phẩm</h2>
 
               <div 
-                className={`text-[15px] text-gray-800 leading-relaxed transition-all duration-500 antialiased 
+                className={`text-[15px] text-gray-900 leading-relaxed transition-all duration-500 
                   [&>img]:mx-auto [&>img]:my-8 [&>img]:rounded-xl [&>img]:max-w-full [&>img]:shadow-lg 
                   [&>h3]:text-[19px] [&>h3]:font-black [&>h3]:mb-4 [&>h3]:mt-10 [&>h3]:text-black [&>h3]:uppercase [&>h3]:tracking-wide 
                   [&>p]:mb-5 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5 [&>ul]:space-y-2
@@ -259,11 +285,9 @@ const ProductDetail = () => {
                 dangerouslySetInnerHTML={{ __html: product.description || "<p>Đang cập nhật thông tin mô tả chi tiết.</p>" }}
               />
 
-              {!isExpanded && (
-                <div className="absolute bottom-[100px] left-0 w-full h-40 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none rounded-b-2xl"></div>
-              )}
+              {/* ĐÃ XÓA BỎ LỚP SƯƠNG MÙ TRẮNG CHE CHỮ Ở ĐÂY */}
 
-              <div className="flex justify-center mt-12 pt-6 border-t border-gray-100">
+              <div className="flex justify-center mt-8 pt-6 border-t border-gray-100">
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="flex items-center space-x-2 px-8 py-2.5 border border-[#2D982A] text-[#2D982A] rounded-full hover:bg-green-50 transition-colors text-[14px] font-bold shadow-sm"
