@@ -34,16 +34,15 @@ const maskPhoneNumber = (phone) => {
   return phone.substring(0, 3) + '****' + phone.substring(phone.length - 3);
 };
 
-// FIX BỊ XUỐNG DÒNG: Đã thêm whitespace-nowrap và inline-block
 const getStatusBadge = (status) => {
   switch (status) {
-    case 'PENDING': return <span className="text-[#f59e0b] bg-yellow-50 px-2.5 py-1 rounded text-[12px] font-bold border border-yellow-200 whitespace-nowrap inline-block">Chờ xác nhận</span>;
-    case 'PAID': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200 whitespace-nowrap inline-block">Đã thanh toán</span>;
-    case 'PROCESSING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200 whitespace-nowrap inline-block">Đang xử lý</span>;
-    case 'SHIPPING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200 whitespace-nowrap inline-block">Đang giao</span>;
-    case 'DELIVERED': return <span className="text-[#2D982A] bg-[#eef8ef] px-2.5 py-1 rounded text-[12px] font-bold border border-green-200 whitespace-nowrap inline-block">Hoàn thành</span>;
-    case 'CANCELLED': return <span className="text-red-500 bg-red-50 px-2.5 py-1 rounded text-[12px] font-bold border border-red-200 whitespace-nowrap inline-block">Đã hủy</span>;
-    default: return <span className="text-gray-500 bg-gray-100 px-2.5 py-1 rounded text-[12px] font-bold whitespace-nowrap inline-block">{status}</span>;
+    case 'PENDING': return <span className="text-[#f59e0b] bg-yellow-50 px-2.5 py-1 rounded text-[12px] font-bold border border-yellow-200">Chờ xác nhận</span>;
+    case 'PAID': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200">Đã thanh toán</span>;
+    case 'PROCESSING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200">Đang xử lý</span>;
+    case 'SHIPPING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200">Đang giao</span>;
+    case 'DELIVERED': return <span className="text-[#2D982A] bg-[#eef8ef] px-2.5 py-1 rounded text-[12px] font-bold border border-green-200">Hoàn thành</span>;
+    case 'CANCELLED': return <span className="text-red-500 bg-red-50 px-2.5 py-1 rounded text-[12px] font-bold border border-red-200">Đã hủy</span>;
+    default: return <span className="text-gray-500 bg-gray-100 px-2.5 py-1 rounded text-[12px] font-bold">{status}</span>;
   }
 };
 
@@ -102,14 +101,16 @@ const OrderItem = ({ order }) => {
         tempContainer.appendChild(clonedElement);
         document.body.appendChild(tempContainer);
 
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // FIX 1: Tăng thời gian chờ lên 800ms để ảnh kịp load hoàn toàn vào bản sao
+        await new Promise(resolve => setTimeout(resolve, 800));
 
         const height = clonedElement.offsetHeight;
         const dataUrl = await domtoimage.toPng(clonedElement, {
             bgcolor: '#ffffff',
             width: 800,
             height: height,
-            quality: 1
+            quality: 1,
+            cacheBust: true // FIX 2: Ép thư viện bỏ qua Cache, luôn tải lại ảnh mới nhất
         });
         
         document.body.removeChild(tempContainer);
@@ -181,6 +182,7 @@ const OrderItem = ({ order }) => {
                 <div>
                   <h4 className="font-bold text-[14px] text-gray-900 mb-3">Sản phẩm đã mua</h4>
                   <div className="space-y-3">
+                    {/* GIAO DIỆN HIỂN THỊ TRÊN WEB */}
                     {details.items && details.items.map((item, index) => (
                       <div key={index} className="flex items-center space-x-4 border-b border-gray-100 pb-3 last:border-0 last:pb-0">
                         <div className="w-[50px] h-[50px] bg-gray-50 border border-gray-200 rounded flex items-center justify-center p-1">
@@ -229,13 +231,12 @@ const OrderItem = ({ order }) => {
 
                 </div>
 
-                {/* BẢN MẪU HÓA ĐƠN BỊ GIẤU */}
+                {/* BẢN MẪU HÓA ĐƠN BỊ GIẤU (ĐỂ XUẤT PDF) */}
                 <div className="hidden bg-white w-[800px] p-10 text-black" id={`invoice-hidden-${order.orderCode}`}>
                     <h1 className="text-center font-black text-[26px] mb-10 text-black">THÔNG TIN CHI TIẾT ĐƠN HÀNG</h1>
                     
                     <div className="flex items-center space-x-4 mb-6">
                         <h2 className="text-[20px] font-bold text-black uppercase">ĐƠN HÀNG {formatShortDate(order.createdAt)}</h2>
-                        {/* FIX TẠI ĐÂY: GỌI HÀM ĐỂ LẤY TRẠNG THÁI THẬT */}
                         {getStatusBadge(order.status)}
                     </div>
 
@@ -268,8 +269,14 @@ const OrderItem = ({ order }) => {
                         {details.items && details.items.map((item, index) => (
                             <div key={index} className="grid grid-cols-12 gap-4 py-4 px-4 items-center">
                                 <div className="col-span-7 flex items-center space-x-4">
-                                    <div className="w-[60px] h-[60px] border border-gray-200 p-1 flex-shrink-0 bg-white flex items-center justify-center">
-                                        <span className="text-[10px] text-gray-400 font-medium">Ảnh SP</span>
+                                    <div className="w-[60px] h-[60px] border border-gray-200 p-1 flex-shrink-0 bg-white">
+                                        
+                                        <img 
+                                          crossOrigin="anonymous" 
+                                          src={item.productImageUrl || "https://placehold.co/100x100/e2e8f0/a1a1aa?text=No+Image"} 
+                                          alt={item.productName} 
+                                          className="w-full h-full object-contain" 
+                                        />
                                     </div>
                                     <span className="text-[13px] font-medium text-black">{item.productName}</span>
                                 </div>
