@@ -36,13 +36,13 @@ const maskPhoneNumber = (phone) => {
 
 const getStatusBadge = (status) => {
   switch (status) {
-    case 'PENDING': return <span className="text-[#f59e0b] bg-yellow-50 px-2.5 py-1 rounded text-[12px] font-bold border border-yellow-200">Chờ xác nhận</span>;
-    case 'PAID': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200">Đã thanh toán</span>;
-    case 'PROCESSING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200">Đang xử lý</span>;
-    case 'SHIPPING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200">Đang giao</span>;
-    case 'DELIVERED': return <span className="text-[#2D982A] bg-[#eef8ef] px-2.5 py-1 rounded text-[12px] font-bold border border-green-200">Hoàn thành</span>;
-    case 'CANCELLED': return <span className="text-red-500 bg-red-50 px-2.5 py-1 rounded text-[12px] font-bold border border-red-200">Đã hủy</span>;
-    default: return <span className="text-gray-500 bg-gray-100 px-2.5 py-1 rounded text-[12px] font-bold">{status}</span>;
+    case 'PENDING': return <span className="text-[#f59e0b] bg-yellow-50 px-2.5 py-1 rounded text-[12px] font-bold border border-yellow-200 whitespace-nowrap inline-block">Chờ xác nhận</span>;
+    case 'PAID': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200 whitespace-nowrap inline-block">Đã thanh toán</span>;
+    case 'PROCESSING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200 whitespace-nowrap inline-block">Đang xử lý</span>;
+    case 'SHIPPING': return <span className="text-blue-500 bg-blue-50 px-2.5 py-1 rounded text-[12px] font-bold border border-blue-200 whitespace-nowrap inline-block">Đang giao</span>;
+    case 'DELIVERED': return <span className="text-[#2D982A] bg-[#eef8ef] px-2.5 py-1 rounded text-[12px] font-bold border border-green-200 whitespace-nowrap inline-block">Hoàn thành</span>;
+    case 'CANCELLED': return <span className="text-red-500 bg-red-50 px-2.5 py-1 rounded text-[12px] font-bold border border-red-200 whitespace-nowrap inline-block">Đã hủy</span>;
+    default: return <span className="text-gray-500 bg-gray-100 px-2.5 py-1 rounded text-[12px] font-bold whitespace-nowrap inline-block">{status}</span>;
   }
 };
 
@@ -54,7 +54,8 @@ const getPaymentMethodText = (method) => {
 };
 
 // --- COMPONENT: TỪNG ĐƠN HÀNG TRONG DANH SÁCH ---
-const OrderItem = ({ order }) => {
+// Nhận thêm prop profileData để lấy email
+const OrderItem = ({ order, profileData }) => {
   const [expanded, setExpanded] = useState(false);
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -101,7 +102,6 @@ const OrderItem = ({ order }) => {
         tempContainer.appendChild(clonedElement);
         document.body.appendChild(tempContainer);
 
-        // FIX 1: Tăng thời gian chờ lên 800ms để ảnh kịp load hoàn toàn vào bản sao
         await new Promise(resolve => setTimeout(resolve, 800));
 
         const height = clonedElement.offsetHeight;
@@ -110,7 +110,7 @@ const OrderItem = ({ order }) => {
             width: 800,
             height: height,
             quality: 1,
-            cacheBust: true // FIX 2: Ép thư viện bỏ qua Cache, luôn tải lại ảnh mới nhất
+            cacheBust: true 
         });
         
         document.body.removeChild(tempContainer);
@@ -250,7 +250,8 @@ const OrderItem = ({ order }) => {
                         <span className="font-medium text-gray-800">Số điện thoại người nhận</span>
                         <span>{details.phoneNumber}</span>
                         <span className="font-medium text-gray-800">Email</span>
-                        <span>{details.email || "benzen20406@gmail.com"}</span>
+                        {/* Lấy email từ profileData nếu API đơn hàng không trả về email */}
+                        <span>{details.email || profileData?.email || "Chưa cập nhật"}</span>
                         <span className="font-medium text-gray-800">Địa chỉ nhận hàng</span>
                         <span>{details.shippingAddressText}</span>
                         <span className="font-medium text-gray-800">Phương thức thanh toán</span>
@@ -454,8 +455,9 @@ const Orders = () => {
               </div>
             ) : filteredOrders.length > 0 ? (
               <div className="space-y-6">
+                {/* TRUYỀN profileData XUỐNG COMPONENT CON ĐỂ LẤY EMAIL */}
                 {filteredOrders.map(order => (
-                  <OrderItem key={order.id} order={order} />
+                  <OrderItem key={order.id} order={order} profileData={profileData} />
                 ))}
               </div>
             ) : (
