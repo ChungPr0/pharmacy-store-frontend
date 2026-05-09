@@ -1,5 +1,6 @@
 import Sidebar from "../components/admin/Sidebar";
 import { Outlet } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 const AdminLayout = () => {
   return (
@@ -25,7 +26,8 @@ const AdminLayout = () => {
         </div>
 
         {/* PAGE */}
-        <div className="p-6 overflow-y-auto">
+        <div className="p-6 overflow-y-auto relative">
+          <Toaster position="top-right" />
           <Outlet />
         </div>
 

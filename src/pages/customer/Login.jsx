@@ -55,7 +55,13 @@ const Login = () => {
 
         toast.success("Đăng nhập thành công!");
         // Chờ context update trước khi navigate
-        setTimeout(() => navigate("/"), 500);
+        setTimeout(() => {
+          if (userData.role === 'ADMIN' || userData.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }, 500);
       }
 
     } catch (err) {
