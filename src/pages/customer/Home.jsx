@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../../constants/images';
+import ProductCard from '../../components/ProductCard';
 
 const BASE_URL = 'https://api.tienchung.online/api/v1';
 
@@ -9,37 +10,8 @@ const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-// --- COMPONENT THẺ SẢN PHẨM ---
-const ProductCard = ({ item, formatPrice }) => {
-  const navigate = useNavigate();
-
-  return (
-    <div 
-      onClick={() => navigate(`/product/${item.slug}`)} 
-      className="bg-[#f9fafb] rounded-xl border border-gray-100 hover:border-[#2D982A] transition-all duration-300 group flex flex-col overflow-hidden shadow-sm hover:shadow-md cursor-pointer w-full min-w-[200px]"
-    >
-      <div className="bg-white m-2 rounded-lg h-[190px] flex items-center justify-center p-3 relative">
-        <img src={item.imageUrl} alt={item.name} className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300" 
-             onError={(e) => { e.target.onerror = null; e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; }} />
-      </div>
-      <div className="p-3.5 flex flex-col flex-1">
-        <h3 className="text-[16px] font-bold text-gray-800 line-clamp-2 min-h-[44px] mb-2 leading-snug group-hover:text-[#2D982A] transition-colors">
-          {item.name}
-        </h3>
-        <p className="text-black font-extrabold text-[18px] mb-4">
-          {formatPrice(item.price)}
-        </p>
-        <button className="mt-auto w-full py-2 border border-[#d1d5db] rounded-lg font-bold text-[14px] text-gray-700 bg-transparent group-hover:bg-[#2D982A] group-hover:text-white group-hover:border-[#2D982A] transition-colors duration-300 uppercase tracking-wide">
-          Xem chi tiết
-        </button>
-      </div>
-    </div>
-  );
-};
-
 // --- COMPONENT KHỐI SẢN PHẨM ---
 const ProductSection = ({ title, products, loading, bgColor = "", formatPrice }) => {
-  // Lấy 5 sản phẩm đầu tiên để hiển thị trên 1 hàng
   const displayProducts = products.slice(0, 5);
 
   return (
@@ -52,7 +24,7 @@ const ProductSection = ({ title, products, loading, bgColor = "", formatPrice })
         {loading ? (
           Array(5).fill(0).map((_, i) => <div key={i} className="bg-gray-200 animate-pulse h-[300px] rounded-xl"></div>)
         ) : displayProducts.length > 0 ? (
-          displayProducts.map((item) => <ProductCard key={item.id} item={item} formatPrice={formatPrice} />)
+          displayProducts.map((item) => <ProductCard key={item.id} item={item} showAddToCart={false} />)
         ) : (
           <div className="col-span-5 flex items-center justify-center py-10 text-gray-500 italic">Chưa có sản phẩm nào</div>
         )}
@@ -82,7 +54,7 @@ const CategoryTabSection = ({ tabList, formatPrice, activeTextColor = "text-[#2D
         const requestBody = {
           categorySlug: activeTabSlug,
           pageNo: 0,
-          pageSize: 10, // Lấy 10 sản phẩm để có thể cuộn ngang
+          pageSize: 10,
           sortBy: "createdAt",
           sortDir: "DESC",
           keyword: "" 
@@ -107,6 +79,8 @@ const CategoryTabSection = ({ tabList, formatPrice, activeTextColor = "text-[#2D
     }
   };
 
+  if (!tabList || tabList.length === 0) return null;
+
   return (
     <div className="bg-white p-8 rounded-2xl w-full border border-gray-100 shadow-sm">
       <div className="flex justify-center flex-wrap gap-3 mb-8">
@@ -126,19 +100,17 @@ const CategoryTabSection = ({ tabList, formatPrice, activeTextColor = "text-[#2D
       </div>
 
       <div className="relative group">
-        {/* Nút cuộn trái */}
-        <button onClick={() => scroll('left')} className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 text-[#2D982A] rounded-full p-2.5 hover:bg-[#2D982A] hover:text-white transition shadow-lg items-center justify-center opacity-0 group-hover:opacity-100 hidden md:flex">
+        <button onClick={() => scroll('left')} className="absolute -left-5 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 text-[#2D982A] rounded-full p-2.5  transition shadow-lg items-center justify-center opacity-0  hidden md:flex">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
         </button>
 
-        {/* Danh sách sản phẩm dạng cuộn ngang */}
         <div ref={scrollRef} className="flex overflow-x-auto gap-5 px-1 py-2 scrollbar-hide snap-x" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
           {loadingTab ? (
             Array(5).fill(0).map((_, i) => <div key={i} className="min-w-[200px] flex-1 bg-gray-100 animate-pulse h-[300px] rounded-xl"></div>)
           ) : products.length > 0 ? (
             products.map((item) => (
               <div key={item.id} className="min-w-[200px] md:min-w-[calc(20%-16px)] snap-start">
-                <ProductCard item={item} formatPrice={formatPrice} />
+                <ProductCard item={item} showAddToCart={false} />
               </div>
             ))
           ) : (
@@ -148,7 +120,6 @@ const CategoryTabSection = ({ tabList, formatPrice, activeTextColor = "text-[#2D
           )}
         </div>
 
-        {/* Nút cuộn phải */}
         <button onClick={() => scroll('right')} className="absolute -right-5 top-1/2 -translate-y-1/2 z-10 bg-white border border-gray-200 text-[#2D982A] rounded-full p-2.5 hover:bg-[#2D982A] hover:text-white transition shadow-lg items-center justify-center opacity-0 group-hover:opacity-100 hidden md:flex">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
         </button>
@@ -164,7 +135,6 @@ const CategoryTabSection = ({ tabList, formatPrice, activeTextColor = "text-[#2D
 };
 
 const Home = () => {
-  // eslint-disable-next-line no-unused-vars
   const [categories, setCategories] = useState([]);
   const [bestSellers, setBestSellers] = useState([]);
   const [latestProducts, setLatestProducts] = useState([]);
@@ -192,15 +162,10 @@ const Home = () => {
     fetchHomeData();
   }, []);
 
-  const tabsGroup1 = [{ id: 1, name: 'Giảm đau, hạ sốt', slug: 'giam-dau-ha-sot' }, { id: 2, name: 'Tim mạch', slug: 'tim-mach' }, { id: 3, name: 'Hỗ trợ tiêu hóa', slug: 'ho-tro-tieu-hoa' }, { id: 4, name: 'Bổ sung Vitamin', slug: 'bo-sung-vitamin' }, { id: 5, name: 'Chăm sóc da mặt', slug: 'cham-soc-da-mat' }];
-  const tabsGroup2 = [{ id: 6, name: 'Tiêu hóa', slug: 'tieu-hoa' }, { id: 7, name: 'Chăm sóc, làm đẹp', slug: 'cham-soc-lam-dep' }, { id: 8, name: 'Điều trị', slug: 'dieu-tri' }, { id: 9, name: 'Tim mạch', slug: 'tim-mach-2' }, { id: 10, name: 'Cải thiện chức năng', slug: 'cai-thien-chuc-nang' }];
-  const tabsGroup3 = [{ id: 11, name: 'Chăm sóc cơ thể', slug: 'cham-soc-co-the' }, { id: 12, name: 'Chăm sóc da mặt', slug: 'cham-soc-da-mat-2' }, { id: 13, name: 'Chăm sóc tóc', slug: 'cham-soc-toc' }, { id: 14, name: 'Mỹ phẩm', slug: 'my-pham' }, { id: 15, name: 'Tình trạng da', slug: 'tinh-trang-da' }];
-  const tabsGroup4 = [{ id: 16, name: 'Nhiệt kế', slug: 'nhiet-ke' }, { id: 17, name: 'Máy đo huyết áp', slug: 'may-do-huyet-ap' }, { id: 18, name: 'Máy đo đường huyết', slug: 'may-do-duong-huyet' }, { id: 19, name: 'Khẩu trang', slug: 'khau-trang' }, { id: 20, name: 'Kit test covid', slug: 'kit-test-covid' }];
-
   return (
     <div className="flex-1 w-full flex flex-col">
       <section className="w-full bg-white flex justify-center border-b border-gray-100">
-        <img src={IMAGES.BANNER_HERO} alt="Banner" className="w-full max-w-[1920px] h-auto object-contain" />
+        <img src={IMAGES.BANNER_HERO} alt="Banner" className="w-full max-w-[1920px] h-auto" />
       </section>
 
       <main className="w-full px-6 xl:px-16 mx-auto py-10 space-y-12 mb-10">
@@ -211,20 +176,31 @@ const Home = () => {
           <img src={IMAGES.SAFETY_BANNER} alt="Mua sắm an toàn" className="w-full rounded-2xl shadow-sm object-cover h-[120px] md:h-auto" />
         </section>
         
-        <CategoryTabSection tabList={tabsGroup1} formatPrice={formatVND} activeTextColor="text-[#2D982A]" />
+        {/* RENDER ĐỘNG DANH MỤC (API DRIVEN) */}
+        {!loading && categories.map((parentCategory, index) => {
+           // Lấy danh sách danh mục con làm Tab. Nếu không có con, lấy chính nó làm 1 tab duy nhất.
+           const tabList = parentCategory.children && parentCategory.children.length > 0 
+              ? parentCategory.children 
+              : [parentCategory];
 
-        <section className="w-full py-2">
-          <img src={IMAGES.SAFETY_BANNER} alt="Mua sắm an toàn" className="w-full rounded-2xl shadow-sm object-cover h-[120px] md:h-auto" />
-        </section>
+           return (
+             <React.Fragment key={parentCategory.id}>
+                <CategoryTabSection 
+                  tabList={tabList} 
+                  formatPrice={formatVND} 
+                  activeTextColor="text-[#2D982A]" 
+                />
 
-        <CategoryTabSection tabList={tabsGroup2} formatPrice={formatVND} activeTextColor="text-gray-900" />
-        <CategoryTabSection tabList={tabsGroup3} formatPrice={formatVND} activeTextColor="text-gray-900" />
-        
-        <section className="w-full py-2">
-          <img src={IMAGES.SAFETY_BANNER} alt="Mua sắm an toàn" className="w-full rounded-2xl shadow-sm object-cover h-[120px] md:h-auto" />
-        </section>
-        
-        <CategoryTabSection tabList={tabsGroup4} formatPrice={formatVND} activeTextColor="text-gray-900" />
+                {/* Xen kẽ Banner cứ sau mỗi khối ) */}
+                {index < categories.length - 1 && (
+                  <section className="w-full py-2">
+                    <img src={IMAGES.SAFETY_BANNER} alt="Mua sắm an toàn" className="w-full rounded-2xl shadow-sm object-cover h-[120px] md:h-auto" />
+                  </section>
+                )}
+             </React.Fragment>
+           );
+        })}
+
       </main>
 
       {/* FLOAT CHAT ICON */}
@@ -234,7 +210,7 @@ const Home = () => {
         </div>
       </div>
       
-      {/* Ẩn thanh scroll mặc định trên trình duyệt webkit */}
+      {/* Ẩn thanh scroll */}
       <style dangerouslySetInnerHTML={{__html: `
         .scrollbar-hide::-webkit-scrollbar {
             display: none;

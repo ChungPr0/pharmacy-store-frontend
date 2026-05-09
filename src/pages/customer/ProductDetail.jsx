@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { useParams, useNavigate } from 'react-router-dom'; 
-import api from '../../api/axios'; // Đã import API chuẩn có gắn Token
+import api from '../../api/axios'; 
 import { useCart } from '../../contexts/CartContext';
 
 const formatVND = (price) => {
@@ -9,9 +9,6 @@ const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-// =========================================================================
-// MOCK DATA: BÌNH LUẬN (GIỮ NGUYÊN GIAO DIỆN CŨ)
-// =========================================================================
 const mockComments = [
   {
     id: 'Cus01', name: 'Cus01',
@@ -55,7 +52,7 @@ const ProductCard = ({ item }) => {
 const ProductDetail = () => {
   const { slug } = useParams(); 
   const navigate = useNavigate();
-  const { addToCart, fetchCart } = useCart();
+  const { fetchCart } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -89,18 +86,11 @@ const ProductDetail = () => {
             setSelectedImage("https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png");
           }
 
-          // Lấy sản phẩm liên quan (Dùng API Search)
+          // Gọi API Sản phẩm liên quan (Sử dụng API mới theo chuẩn Contract)
           try {
-            const relatedRes = await api.post('/products/search', { 
-              categorySlug: productData.categorySlug || "", 
-              pageNo: 0, 
-              pageSize: 5, 
-              sortBy: "createdAt", 
-              sortDir: "DESC", 
-              keyword: "" 
-            });
+            const relatedRes = await api.get(`/products/${slug}/related?limit=5`);
             if (relatedRes.data.status === 200) {
-              setRelatedProducts(relatedRes.data.data.content || []);
+              setRelatedProducts(relatedRes.data.data || []);
             }
           } catch (relError) {
              console.error("Không lấy được sp liên quan", relError);
@@ -108,8 +98,8 @@ const ProductDetail = () => {
         }
       } catch (error) {
         console.error("Lỗi tải chi tiết:", error);
-        toast.error("Không tìm thấy sản phẩm!");
-        navigate('/'); 
+        toast.error(error.response?.data?.message || "Không tìm thấy sản phẩm!");
+        navigate('/'); // Điều hướng về trang chủ nếu lỗi 404
       } finally {
         setLoading(false);
       }
@@ -146,14 +136,13 @@ const ProductDetail = () => {
     const loadToast = toast.loading('Đang thêm vào giỏ hàng...');
     try {
       const res = await api.post('/cart/items', {
-        productId: product.id, // Truyền ID kiểu số nguyên chuẩn API
+        productId: product.id, 
         quantity: quantity
       });
 
       if (res.data.status === 200 || res.status === 200) {
         toast.success('Đã thêm sản phẩm vào giỏ hàng!', { id: loadToast });
-        window.dispatchEvent(new Event('cartUpdated')); // Bắn sự kiện để Header tự cập nhật số
-        // Fetch cart từ context để update local state
+        window.dispatchEvent(new Event('cartUpdated'));
         setTimeout(() => fetchCart(), 200);
       } else {
         toast.error(res.data.message || 'Lỗi thêm vào giỏ hàng!', { id: loadToast });
@@ -287,7 +276,7 @@ const ProductDetail = () => {
               <h2 className="text-[26px] font-black text-black uppercase mb-10 tracking-wide">Mô tả sản phẩm</h2>
 
               <div 
-                className={`text-[15px] text-gray-800 leading-relaxed transition-all duration-500 antialiased 
+                className={`text-[15px] text-gray-900 leading-relaxed transition-all duration-500 
                   [&>img]:mx-auto [&>img]:my-8 [&>img]:rounded-xl [&>img]:max-w-full [&>img]:shadow-lg 
                   [&>h3]:text-[19px] [&>h3]:font-black [&>h3]:mb-4 [&>h3]:mt-10 [&>h3]:text-black [&>h3]:uppercase [&>h3]:tracking-wide 
                   [&>p]:mb-5 [&>ul]:list-disc [&>ul]:pl-6 [&>ul]:mb-5 [&>ul]:space-y-2
@@ -296,11 +285,9 @@ const ProductDetail = () => {
                 dangerouslySetInnerHTML={{ __html: product.description || "<p>Đang cập nhật thông tin mô tả chi tiết.</p>" }}
               />
 
-              {!isExpanded && (
-                <div className="absolute bottom-[100px] left-0 w-full h-40 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none rounded-b-2xl"></div>
-              )}
+              {/* ĐÃ XÓA BỎ LỚP SƯƠNG MÙ TRẮNG CHE CHỮ Ở ĐÂY */}
 
-              <div className="flex justify-center mt-12 pt-6 border-t border-gray-100">
+              <div className="flex justify-center mt-8 pt-6 border-t border-gray-100">
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="flex items-center space-x-2 px-8 py-2.5 border border-[#2D982A] text-[#2D982A] rounded-full hover:bg-green-50 transition-colors text-[14px] font-bold shadow-sm"
