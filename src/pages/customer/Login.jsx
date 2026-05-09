@@ -54,8 +54,15 @@ const Login = () => {
         // Lưu token, refreshToken và user data vào context
         login(userData, token, refreshTokenValue);
 
-        // Chuyển hướng về trang chủ
-        navigate("/");
+        toast.success("Đăng nhập thành công!");
+        // Chờ context update trước khi navigate
+        setTimeout(() => {
+          if (userData.role === 'ADMIN' || userData.role === 'admin') {
+            navigate("/admin");
+          } else {
+            navigate("/");
+          }
+        }, 500);
       } else {
         // Bắt lỗi khi API gọi thành công nhưng trả về status lỗi logic
         setErrorMessage(res.data.message || "Tài khoản hoặc mật khẩu không chính xác!");

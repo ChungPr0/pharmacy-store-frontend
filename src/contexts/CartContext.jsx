@@ -102,6 +102,7 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("token", token);
     localStorage.setItem("refreshToken", refreshToken);
     localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("role", userData.role);
     
     // Fetch cart with new token
     try {
@@ -130,6 +131,7 @@ export const CartProvider = ({ children }) => {
     localStorage.removeItem("token");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("user");
+    localStorage.removeItem("role");
     setCartItems([]);
   };
 
