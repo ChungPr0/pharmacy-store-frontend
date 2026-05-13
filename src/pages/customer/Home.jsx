@@ -4,7 +4,9 @@ import { useNavigate } from 'react-router-dom';
 import { IMAGES } from '../../constants/images';
 import ProductCard from '../../components/ProductCard';
 
-const BASE_URL = 'https://api.tienchung.online/api/v1';
+import { API_CONFIG } from '../../api/config';
+
+const BASE_URL = API_CONFIG.baseURL;
 
 const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);

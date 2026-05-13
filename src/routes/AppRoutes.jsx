@@ -20,6 +20,7 @@ import Products from '../pages/admin/Products';
 import Orders from '../pages/admin/Orders';
 import Users from '../pages/admin/Users';
 import Categories from '../pages/admin/Categories';
+import Inventory from '../pages/admin/Inventory';
 import Checkout from '../pages/customer/Checkout';
 
 import ProtectedAdminRoute from '../components/ProtectedAdminRoute';
@@ -60,6 +61,7 @@ export default function AppRoutes() {
           <Route path="orders" element={<Orders />} />
           <Route path="users" element={<Users />} />
           <Route path="categories" element={<Categories />} />
+          <Route path="inventory" element={<Inventory />} />
         </Route>
       </Routes>
     </BrowserRouter>

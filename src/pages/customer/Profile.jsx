@@ -196,6 +196,8 @@ const Profile = () => {
     } catch (error) {
       if (error.response?.status === 400) {
         setAddressError(error.response.data?.message || "Lỗi dữ liệu đầu vào");
+      } else if (error.response?.status === 403) {
+        toast.error(error.response.data?.message || "Bạn không có quyền chỉnh sửa địa chỉ này!");
       } else {
         toast.error(error.response?.data?.message || "Thao tác thất bại!");
       }
@@ -470,16 +472,18 @@ const Profile = () => {
                                 <span className="font-bold text-[15px] text-gray-900">{addr.receiverName}</span>
                                 <span className="text-[14px] text-gray-300">|</span>
                                 <span className="font-bold text-[14px] text-gray-900">{maskPhoneNumber(addr.phoneNumber)}</span>
+                                {addr.isDefault && <span className="text-[11px] font-bold bg-[#eef8ef] text-[#2D982A] px-2 py-0.5 rounded border border-[#2D982A]">Mặc định</span>}
                             </div>
                             <p className="text-[14px] text-gray-800 leading-relaxed mb-4">{addr.detailAddress}, {addr.ward}, {addr.district}, {addr.province}</p>
                             
-                            <label className="flex items-center cursor-pointer group w-fit">
-                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-2 transition-colors ${addr.isDefault ? 'border-[#2D982A]' : 'border-gray-400'}`}>
-                                    {addr.isDefault && <div className="w-2.5 h-2.5 bg-[#2D982A] rounded-full"></div>}
-                                </div>
-                                <span className="text-[14px] text-gray-800">Đặt làm địa chỉ mặc định</span>
-                                <input type="radio" checked={addr.isDefault} onChange={() => !addr.isDefault && handleSetDefaultAddress(addr.id)} className="hidden" />
-                            </label>
+                            {!addr.isDefault && (
+                              <label className="flex items-center cursor-pointer group w-fit">
+                                  <div className="w-5 h-5 rounded-full border-2 border-gray-400 flex items-center justify-center mr-2 transition-colors">
+                                  </div>
+                                  <span className="text-[14px] text-gray-800 group-hover:text-[#2D982A] transition-colors">Đặt làm địa chỉ mặc định</span>
+                                  <input type="radio" checked={addr.isDefault} onChange={() => handleSetDefaultAddress(addr.id)} className="hidden" />
+                              </label>
+                            )}
                         </div>
                     ))}
                 </div>
