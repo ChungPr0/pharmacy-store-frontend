@@ -1,39 +1,53 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
+  const location = useLocation();
+  const isActive = (path) => location.pathname === path || (path !== "/admin" && location.pathname.startsWith(path));
+
+  const menuItems = [
+    { name: "Tổng quan", path: "/admin", icon: "📊" },
+    { name: "Đơn hàng", path: "/admin/orders", icon: "📦" },
+    { name: "Sản phẩm", path: "/admin/products", icon: "🛒" },
+    { name: "Kho hàng", path: "/admin/inventory", icon: "🏭" },
+    { name: "Khách hàng", path: "/admin/users", icon: "👥" },
+    { name: "Danh mục", path: "/admin/categories", icon: "📁" },
+  ];
+
   return (
-    <div className="w-64 bg-green-700 text-white flex flex-col p-4">
-
-      <h2 className="text-xl font-bold mb-6">TD</h2>
-
-      <nav className="flex flex-col gap-3">
-
-        <Link to="/admin" className="hover:bg-green-600 p-2 rounded">
-          📊 Quản lý tổng
-        </Link>
-
-        <Link to="/admin/orders" className="hover:bg-green-600 p-2 rounded">
-          📦 Quản lý đơn hàng
-        </Link>
-
-        <Link to="/admin/products" className="hover:bg-green-600 p-2 rounded">
-          🛒 Quản lý sản phẩm
-        </Link>
-
-        <Link to="/admin/users" className="hover:bg-green-600 p-2 rounded">
-          👤 Quản lý khách hàng
-        </Link>
-
-        <Link to="/admin/categories" className="hover:bg-green-600 p-2 rounded">
-          📁 Danh mục
-        </Link>
-
-      </nav>
-
-      <div className="mt-auto text-sm opacity-80">
-        ⬅️ Truy cập Website
+    <div className="w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 shadow-xl z-20 shrink-0">
+      <div className="h-16 flex items-center px-6 bg-slate-950/50 border-b border-slate-800">
+        <h2 className="text-2xl font-black text-white tracking-wider flex items-center gap-2">
+          <span className="text-emerald-500">TD</span> PHARMA
+        </h2>
       </div>
 
+      <nav className="flex-1 flex flex-col gap-2 p-4 overflow-y-auto">
+        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 px-2">Menu chính</div>
+        {menuItems.map((item) => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                active
+                  ? "bg-emerald-500/10 text-emerald-400 shadow-[inset_4px_0_0_0_#10b981]"
+                  : "hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              <span className={`text-xl ${active ? "grayscale-0" : "grayscale"}`}>{item.icon}</span>
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="p-4 border-t border-slate-800 bg-slate-900/50">
+        <Link to="/" className="flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+          <span className="text-xl">🏠</span>
+          Về trang chủ
+        </Link>
+      </div>
     </div>
   );
 };

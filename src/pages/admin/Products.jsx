@@ -222,50 +222,57 @@ const Products = () => {
   };
 
   return (
-    <div className="p-4">
+    <div className="h-full flex flex-col">
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Sản phẩm</h2>
-          <p className="text-sm text-gray-500 mt-1">
-            Tổng cộng {totalElements} sản phẩm
+          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Sản phẩm</h2>
+          <p className="text-sm text-slate-500 mt-1.5 font-medium">
+            Hệ thống đang có tổng cộng <span className="text-blue-600 font-bold">{totalElements}</span> sản phẩm
           </p>
         </div>
         <button
           onClick={handleOpenAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md shadow-sm hover:bg-blue-700 transition font-medium flex items-center gap-2"
+          className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl shadow-sm shadow-emerald-200 hover:bg-emerald-700 transition-all font-bold flex items-center gap-2"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
           </svg>
-          Thêm sản phẩm
+          Thêm sản phẩm mới
         </button>
       </div>
 
       {/* FILTERS */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-100 mb-6 flex flex-wrap gap-4 items-end">
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium mb-1.5 text-gray-600">Tìm kiếm</label>
-          <input
-            type="text"
-            placeholder="Tên sản phẩm..."
-            value={keyword}
-            onChange={(e) => {
-              setKeyword(e.target.value);
-              setPageNo(0);
-            }}
-            className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+      <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60 mb-6 flex flex-wrap gap-4 items-end">
+        <div className="flex-1 min-w-[240px]">
+          <label className="block text-sm font-semibold mb-2 text-slate-700">Tìm kiếm</label>
+          <div className="relative">
+             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+             </div>
+             <input
+               type="text"
+               placeholder="Tên sản phẩm..."
+               value={keyword}
+               onChange={(e) => {
+                 setKeyword(e.target.value);
+                 setPageNo(0);
+               }}
+               className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm font-medium"
+             />
+          </div>
         </div>
-        <div className="flex-1 min-w-[200px]">
-          <label className="block text-sm font-medium mb-1.5 text-gray-600">Danh mục</label>
+        <div className="w-full md:w-[240px]">
+          <label className="block text-sm font-semibold mb-2 text-slate-700">Danh mục</label>
           <select
             value={categorySlug}
             onChange={(e) => {
               setCategorySlug(e.target.value);
               setPageNo(0);
             }}
-            className="w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all text-sm font-medium appearance-none"
           >
             <option value="">Tất cả danh mục</option>
             {flatCategories.map((c) => (
@@ -278,57 +285,62 @@ const Products = () => {
       </div>
 
       {/* TABLE */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 overflow-hidden flex-1 flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
+          <table className="w-full text-sm text-left whitespace-nowrap">
+            <thead className="bg-slate-50/80 text-slate-600 font-semibold border-b border-slate-200">
               <tr>
-                <th className="p-4 font-semibold">Sản phẩm</th>
-                <th className="p-4 font-semibold">Danh mục</th>
-                <th className="p-4 font-semibold">Giá</th>
-                <th className="p-4 font-semibold text-center">Tồn kho</th>
-                <th className="p-4 font-semibold text-center">Trạng thái</th>
-                <th className="p-4 font-semibold text-center">Hành động</th>
+                <th className="px-6 py-4">Sản phẩm</th>
+                <th className="px-6 py-4">Danh mục</th>
+                <th className="px-6 py-4 text-right">Giá</th>
+                <th className="px-6 py-4 text-center">Tồn kho</th>
+                <th className="px-6 py-4 text-center">Trạng thái</th>
+                <th className="px-6 py-4 text-center">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-100">
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="p-8 text-center text-gray-500">
-                    Không tìm thấy sản phẩm nào.
+                  <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                      <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                    <p>Không tìm thấy sản phẩm nào.</p>
                   </td>
                 </tr>
               ) : (
                 products.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="p-4">
-                      <div className="font-medium text-gray-900">{item.name}</div>
-                      <div className="text-xs text-gray-500">Slug: {item.slug}</div>
+                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-bold text-slate-800">{item.name}</div>
+                      <div className="text-xs font-medium text-slate-500 mt-0.5">Mã: {item.slug}</div>
                     </td>
-                    <td className="p-4 text-gray-600">{item.categoryName || '-'}</td>
-                    <td className="p-4 text-orange-600 font-medium">{formatCurrency(item.price)}</td>
-                    <td className="p-4 text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.totalStockQuantity > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    <td className="px-6 py-4 font-medium text-slate-600">{item.categoryName || '-'}</td>
+                    <td className="px-6 py-4 text-right font-bold text-emerald-600">{formatCurrency(item.price)}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`px-2.5 py-1 rounded-md text-xs font-bold border ${item.totalStockQuantity > 0 ? 'bg-blue-50 text-blue-700 border-blue-200/60' : 'bg-red-50 text-red-700 border-red-200/60'}`}>
                         {item.totalStockQuantity}
                       </span>
                     </td>
-                    <td className="p-4 text-center">
+                    <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
                           item.isActive
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-gray-100 text-gray-600 border-gray-200"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
+                            : "bg-slate-100 text-slate-600 border-slate-200/60"
                         }`}
                       >
-                        <span className={`w-1.5 h-1.5 rounded-full ${item.isActive ? "bg-emerald-500" : "bg-gray-400"}`}></span>
+                        <span className={`w-2 h-2 rounded-full ${item.isActive ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
                         {item.isActive ? "Đang bán" : "Tạm ngưng"}
                       </span>
                     </td>
-                    <td className="p-4">
+                    <td className="px-6 py-4">
                       <div className="flex justify-center gap-2">
                         <button
                           onClick={() => handleOpenEdit(item.slug)}
-                          className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition"
+                          className="w-8 h-8 flex items-center justify-center text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-transparent hover:border-blue-200"
                           title="Sửa"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -337,19 +349,19 @@ const Products = () => {
                         </button>
                         <button
                           onClick={() => handleToggleStatus(item)}
-                          className={`p-1.5 rounded transition ${
+                          className={`w-8 h-8 flex items-center justify-center rounded-lg transition-colors border border-transparent ${
                             item.isActive
-                              ? "text-orange-600 bg-orange-50 hover:bg-orange-100"
-                              : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100"
+                              ? "text-amber-600 bg-amber-50 hover:bg-amber-100 hover:border-amber-200"
+                              : "text-emerald-600 bg-emerald-50 hover:bg-emerald-100 hover:border-emerald-200"
                           }`}
                           title={item.isActive ? "Tạm ngưng" : "Mở bán"}
                         >
                           {item.isActive ? (
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9v6m-4.5 0V9M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                              </svg>
                           ) : (
-                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.91 11.672a.375.375 0 010 .656l-5.603 3.113a.375.375 0 01-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112z" />
                              </svg>
@@ -366,35 +378,44 @@ const Products = () => {
 
         {/* PAGINATION */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50">
-             <div className="text-sm text-gray-500">
-                Trang {pageNo + 1} / {totalPages}
+          <div className="mt-auto flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
+             <div className="text-sm font-medium text-slate-500">
+                Trang <span className="text-slate-800 font-bold">{pageNo + 1}</span> / {totalPages}
              </div>
-             <div className="flex gap-1">
+             <div className="flex gap-2">
               <button
                 disabled={pageNo === 0}
                 onClick={() => setPageNo((p) => Math.max(0, p - 1))}
-                className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+                className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 Trước
               </button>
-              {Array.from({ length: totalPages }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPageNo(i)}
-                  className={`px-3 py-1.5 border rounded text-sm ${
-                    pageNo === i
-                      ? "bg-blue-600 text-white border-blue-600"
-                      : "border-gray-300 text-gray-600 hover:bg-gray-100 bg-white"
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let p = i;
+                // Basic logic to keep current page somewhat centered if total pages > 5
+                if (totalPages > 5 && pageNo > 2) {
+                   p = pageNo - 2 + i;
+                }
+                if (p >= totalPages) return null;
+                
+                return (
+                  <button
+                    key={p}
+                    onClick={() => setPageNo(p)}
+                    className={`w-9 h-9 flex items-center justify-center border rounded-xl text-sm font-bold transition-all ${
+                      pageNo === p
+                        ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200"
+                        : "border-slate-200 text-slate-600 hover:bg-white hover:shadow-sm"
+                    }`}
+                  >
+                    {p + 1}
+                  </button>
+                );
+              })}
               <button
                 disabled={pageNo >= totalPages - 1}
                 onClick={() => setPageNo((p) => Math.min(totalPages - 1, p + 1))}
-                className="px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed bg-white"
+                className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-white hover:shadow-sm disabled:opacity-40 disabled:cursor-not-allowed transition-all"
               >
                 Sau
               </button>

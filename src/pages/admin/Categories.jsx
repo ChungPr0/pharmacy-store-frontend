@@ -125,48 +125,54 @@ const Categories = () => {
   };
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Quản lý danh mục</h2>
+    <div className="h-full flex flex-col">
+      <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-extrabold text-slate-800 tracking-tight">Quản lý danh mục</h2>
+          <p className="text-sm text-slate-500 mt-1.5 font-medium">Sắp xếp, phân loại các sản phẩm trong kho</p>
+        </div>
         <button
           onClick={() => handleOpenAdd()}
-          className="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 transition"
+          className="bg-emerald-600 text-white px-5 py-2.5 rounded-xl shadow-sm shadow-emerald-200 hover:bg-emerald-700 transition-all font-bold flex items-center gap-2"
         >
-          + Thêm danh mục gốc
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Thêm danh mục gốc
         </button>
       </div>
 
       {showForm && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md relative">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md relative border border-slate-200/60">
             <button 
               onClick={() => setShowForm(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
+              className="absolute top-6 right-6 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-all"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <h3 className="text-xl font-semibold mb-5 text-gray-800">{isEdit ? "Cập nhật danh mục" : "Thêm danh mục mới"}</h3>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <h3 className="text-2xl font-black mb-6 text-slate-800">{isEdit ? "Cập nhật danh mục" : "Thêm danh mục mới"}</h3>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-5">
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-gray-700">Tên danh mục <span className="text-red-500">*</span></label>
+                <label className="block text-sm font-bold mb-2 text-slate-700">Tên danh mục <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   placeholder="Nhập tên danh mục..."
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="border border-gray-300 px-3 py-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium"
                   required
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-gray-700">Danh mục cha</label>
+                <label className="block text-sm font-bold mb-2 text-slate-700">Danh mục cha</label>
                 <select
                   value={parentId}
                   onChange={(e) => setParentId(e.target.value)}
-                  className="border border-gray-300 px-3 py-2.5 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all font-medium appearance-none"
                 >
                   <option value="">-- Không có (Làm danh mục gốc) --</option>
                   {flatList.map(item => {
@@ -181,15 +187,15 @@ const Categories = () => {
                 </select>
               </div>
 
-              <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
+              <div className="flex justify-end gap-3 mt-4">
                 <button 
                   type="button" 
                   onClick={() => setShowForm(false)}
-                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors font-medium"
+                  className="px-6 py-2.5 rounded-xl font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all"
                 >
                   Hủy
                 </button>
-                <button type="submit" className="bg-blue-600 text-white px-5 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium">
+                <button type="submit" className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-all">
                   {isEdit ? "Cập nhật" : "Thêm mới"}
                 </button>
               </div>
@@ -199,9 +205,16 @@ const Categories = () => {
       )}
 
       {/* TREE */}
-      <div className="bg-white p-4 rounded shadow border border-gray-200 overflow-x-auto">
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 flex-1 overflow-auto">
         {categories.length === 0 ? (
-          <p className="text-gray-500 text-center py-4">Chưa có danh mục nào.</p>
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+              <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+              </svg>
+            </div>
+            <p className="text-slate-500 font-medium">Chưa có danh mục nào.</p>
+          </div>
         ) : (
           <div className="-ml-4">
             {categories.map((cat) => (
