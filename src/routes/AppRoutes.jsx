@@ -13,6 +13,7 @@ import Category from '../pages/customer/Category';
 import SearchResults from '../pages/customer/SearchResults';
 import CustomerOrders from '../pages/customer/Orders';
 import Profile from '../pages/customer/Profile';
+import NotFound from '../pages/customer/NotFound';
 
 import AdminLayout from '../layouts/AdminLayout';
 import Dashboard from '../pages/admin/Dashboard';
@@ -44,6 +45,8 @@ export default function AppRoutes() {
           <Route path="checkout" element={<Checkout />} />
           <Route path="orders" element={<CustomerOrders />} />
           <Route path="profile" element={<Profile />} />
+          {/* CATCH-ALL ROUTE DÀNH CHO CÁC URL SAI HOẶC KHÔNG TỒN TẠI */}
+          <Route path="*" element={<NotFound />} />
         </Route>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />

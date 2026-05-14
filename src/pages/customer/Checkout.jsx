@@ -16,7 +16,7 @@ const maskPhoneNumber = (phone) => {
 const Checkout = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = useCart();
+  const { token, openAuthModal } = useCart();
   
   const selectedProductIds = location.state?.selectedItems || [];
 
@@ -46,9 +46,10 @@ const Checkout = () => {
   useEffect(() => {
     if (!token) {
         toast.error("Vui lòng đăng nhập để thanh toán!");
-        navigate('/login');
+        navigate('/');
+        openAuthModal('login');
     }
-  }, [token, navigate]);
+  }, [token, navigate, openAuthModal]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

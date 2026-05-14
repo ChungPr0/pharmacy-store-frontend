@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
+import { useCart } from "../../contexts/CartContext";
 
 const ForgotPassword = () => {
 
   const navigate = useNavigate();
+  const { openAuthModal, closeAuthModal } = useCart();
 
   const [step, setStep] = useState(1);
   const [phone, setPhone] = useState("");
@@ -46,25 +48,31 @@ const ForgotPassword = () => {
         newPassword: password,
       });
       alert("Thành công");
-      navigate("/login");
+      if (openAuthModal) openAuthModal('login');
+      else navigate("/login");
     } catch {
       alert("Lỗi");
     }
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm p-4 antialiased">
+      <div className="bg-white rounded-3xl shadow-2xl flex max-w-[900px] w-full min-h-[500px] overflow-hidden relative animate-in fade-in zoom-in-95 duration-300">
+        
+        <button onClick={() => closeAuthModal ? closeAuthModal() : navigate('/')} className="absolute top-4 right-4 z-10 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-700"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
 
-      {/* LEFT IMAGE */}
-      <div className="w-1/2 h-screen">
-        <img
-          src="/pharmacy.png"
-          className="w-full h-full object-cover"
-        />
-      </div>
+        {/* LEFT IMAGE */}
+        <div className="hidden md:flex w-1/2 bg-gray-100 items-center justify-center relative">
+          <img
+            src="/pharmacy.png"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
 
-      {/* RIGHT */}
-      <div className="w-1/2 bg-[#EEF5F0] flex items-center justify-center">
+        {/* RIGHT */}
+        <div className="w-full md:w-1/2 bg-green-50/50 flex items-center justify-center p-8 lg:p-12 relative">
 
         <div className="w-[400px]">
 
@@ -115,7 +123,7 @@ const ForgotPassword = () => {
               </button>
 
               <p
-                onClick={() => navigate("/login")}
+                onClick={() => openAuthModal ? openAuthModal('login') : navigate("/login")}
                 className="text-center mt-6 text-sm cursor-pointer"
               >
                 &lt;&lt; Trở về
@@ -156,10 +164,9 @@ const ForgotPassword = () => {
               </button>
             </>
           )}
-
+          </div>
         </div>
       </div>
-
     </div>
   );
 };

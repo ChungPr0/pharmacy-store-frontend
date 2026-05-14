@@ -52,7 +52,7 @@ const ProductCard = ({ item }) => {
 const ProductDetail = () => {
   const { slug } = useParams(); 
   const navigate = useNavigate();
-  const { fetchCart } = useCart();
+  const { fetchCart, openAuthModal } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -98,8 +98,7 @@ const ProductDetail = () => {
         }
       } catch (error) {
         console.error("Lỗi tải chi tiết:", error);
-        toast.error(error.response?.data?.message || "Không tìm thấy sản phẩm!");
-        navigate('/'); // Điều hướng về trang chủ nếu lỗi 404
+        navigate('/not-found', { replace: true });
       } finally {
         setLoading(false);
       }
@@ -124,7 +123,7 @@ const ProductDetail = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
-      navigate('/login');
+      openAuthModal('login');
       return;
     }
 
@@ -159,7 +158,7 @@ const ProductDetail = () => {
     const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Vui lòng đăng nhập để mua hàng!');
-      navigate('/login');
+      openAuthModal('login');
       return;
     }
 

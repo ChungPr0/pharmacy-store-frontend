@@ -11,7 +11,9 @@ const formatVND = (price) => {
 
 const Cart = () => {
   const navigate = useNavigate();
-  const { fetchCart } = useCart();
+  const { fetchCart, user, openAuthModal } = useCart();
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'STAFF';
+
   const [cartData, setCartData] = useState({ items: [], totalItems: 0, totalPrice: 0 });
   const [loading, setLoading] = useState(true);
   const [selectedItems, setSelectedItems] = useState([]);
@@ -55,7 +57,21 @@ const Cart = () => {
     }
   };
 
+  const handleCheckout = () => {
+    if (!localStorage.getItem('token')) {
+      toast.error('Vui lòng đăng nhập để tiếp tục!');
+      openAuthModal('login');
+      return;
+    }
+    navigate('/checkout', { state: { selectedItems } });
+  };
+
   useEffect(() => {
+    if (isAdmin) {
+      toast.error('Tài khoản quản trị không thể truy cập giỏ hàng.');
+      navigate('/');
+      return;
+    }
     window.scrollTo(0, 0);
     fetchCartData();
     fetchSuggestedProducts();
@@ -251,7 +267,7 @@ const Cart = () => {
 
               <button 
                 disabled={isEmpty || selectedItems.length === 0}
-                onClick={() => navigate('/checkout', { state: { selectedItems } })}
+                onClick={handleCheckout}
                 className={`w-full py-3.5 rounded-lg font-bold text-[15px] text-white uppercase tracking-wide transition-all shadow-md ${
                   (isEmpty || selectedItems.length === 0) 
                   ? 'bg-gray-300 cursor-not-allowed' 

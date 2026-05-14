@@ -5,13 +5,19 @@ import { IMAGES } from '../constants/images';
 import api from '../api/axios';
 import { useCart } from '../contexts/CartContext';
 
+import Login from '../pages/customer/Login';
+import Register from '../pages/customer/Register';
+import ForgotPassword from '../pages/customer/ForgotPassword';
+
 export default function CustomerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, token, getTotalItems, logout, fetchCart } = useCart();
+  const { user, token, getTotalItems, logout, fetchCart, authModal, openAuthModal, closeAuthModal } = useCart();
   
   const [showPromo, setShowPromo] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
+
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'STAFF';
 
   useEffect(() => {
     if (token) {
@@ -29,11 +35,11 @@ export default function CustomerLayout() {
 
   const handleProtectedAction = (path) => {
     if (!token) {
-      toast.error('Vui lòng đăng nhập để tiếp tục!');
-      navigate('/login');
-    } else {
-      navigate(path);
+      toast.error('Vui lòng đăng nhập để thực hiện chức năng này!');
+      openAuthModal('login');
+      return;
     }
+    navigate(path);
   };
 
   const handleSearch = (e) => {
@@ -100,7 +106,7 @@ export default function CustomerLayout() {
         )}
 
         {/* PHẦN HEADER CHÍNH */}
-        <header className="bg-white border-b border-gray-100">
+        <header className="bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm transition-all duration-300">
           <div className="w-full px-6 xl:px-12 py-2.5 flex items-center justify-between">
             
             {/* LOGO */}
@@ -118,11 +124,11 @@ export default function CustomerLayout() {
                   <span onClick={() => navigate('/support')} className="text-[13px] font-medium text-gray-600 hover:text-[#2D982A] cursor-pointer">Hỗ trợ</span>
                 </div>
 
-                <div className="relative w-full">
+                <div className="relative w-full group">
                   <svg onClick={handleSearch} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-[18px] h-[18px] absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 cursor-pointer hover:text-[#2D982A] transition-colors">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
                   </svg>
-                  <input type="text" placeholder="Tìm kiếm sản phẩm..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={handleSearch} className="w-full border border-gray-300 rounded-full py-2 pl-10 pr-4 outline-none focus:border-[#2D982A] focus:ring-1 focus:ring-[#2D982A] text-[14px] text-gray-800 placeholder-gray-400 leading-tight" />
+                  <input type="text" placeholder="Tìm kiếm sản phẩm..." value={searchKeyword} onChange={(e) => setSearchKeyword(e.target.value)} onKeyDown={handleSearch} className="w-full border border-gray-300 rounded-full py-2.5 pl-10 pr-4 outline-none focus:border-[#2D982A] focus:ring-1 focus:ring-[#2D982A] text-[14px] text-gray-800 placeholder-gray-400 leading-tight transition-all duration-300 focus:shadow-sm" />
                 </div>
               </div>
             </div>
@@ -145,18 +151,28 @@ export default function CustomerLayout() {
                     </div>
 
                     {/* Menu thả xuống (Hiển thị khi hover) */}
-                    <div className="absolute top-[100%] right-0 pt-2 w-[180px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    <div className="absolute top-[100%] right-0 pt-2 w-[210px] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                       <ul className="bg-white border border-gray-100 rounded-lg shadow-xl py-2 overflow-hidden">
                         <li onClick={() => navigate('/profile')} className="px-4 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-medium flex items-center space-x-2 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
                           <span>Hồ sơ cá nhân</span>
                         </li>
-                        <li onClick={() => navigate('/orders')} className="px-4 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-medium flex items-center space-x-2 transition-colors">
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
-                          <span>Lịch sử mua hàng</span>
-                        </li>
+                        {!isAdmin && (
+                          <li onClick={() => navigate('/orders')} className="px-4 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-medium flex items-center space-x-2 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
+                            <span>Lịch sử mua hàng</span>
+                          </li>
+                        )}
+                        
+                        {isAdmin && (
+                          <li onClick={() => navigate('/admin/dashboard')} className="px-4 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-medium flex items-center space-x-2 transition-colors border-t border-gray-50">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
+                            <span>Trang quản trị</span>
+                          </li>
+                        )}
+
                         <div className="w-full h-[1px] bg-gray-100 my-1"></div>
-                        <li onClick={() => { logout(); navigate('/login'); toast.success('Đã đăng xuất!'); }} className="px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 cursor-pointer font-medium flex items-center space-x-2 transition-colors">
+                        <li onClick={() => { logout(); navigate('/'); toast.success('Đã đăng xuất!'); }} className="px-4 py-2.5 text-[13px] text-red-500 hover:bg-red-50 cursor-pointer font-medium flex items-center space-x-2 transition-colors">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" /></svg>
                           <span>Đăng xuất</span>
                         </li>
@@ -166,30 +182,32 @@ export default function CustomerLayout() {
                   </div>
                 ) : (
                   // KHỐI CHƯA ĐĂNG NHẬP
-                  <div onClick={() => navigate('/login')} className="flex items-center space-x-1 cursor-pointer hover:text-[#2D982A] group border-l border-gray-200 pl-3 ml-2">
+                  <div onClick={() => openAuthModal('login')} className="flex items-center space-x-1 cursor-pointer hover:text-[#2D982A] group border-l border-gray-200 pl-3 ml-2">
                     <span className="text-[13px] font-bold text-gray-600 group-hover:text-[#2D982A]">Đăng nhập</span>
                   </div>
                 )}
               </div>
               
-              <div className="flex items-center space-x-2">
-                <button onClick={() => handleProtectedAction('/orders')} className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-[18px] h-[18px] text-[#2D982A] mr-1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6" /></svg>
-                  <span className="text-[13px] font-bold text-gray-700">Đơn hàng</span>
+              {!isAdmin && (
+                <div className="flex items-center space-x-2">
+                  <button onClick={() => handleProtectedAction('/orders')} className="flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-[18px] h-[18px] text-[#2D982A] mr-1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6" /></svg>
+                    <span className="text-[13px] font-bold text-gray-700">Đơn hàng</span>
+                    
+                  </button>
                   
-                </button>
-                
-                <button onClick={() => handleProtectedAction('/cart')} className="relative flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
-                  <span className="text-[13px] font-bold text-gray-700 mr-1.5">Giỏ hàng</span>
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px] text-[#2D982A]"><path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" /></svg>
-                  
-                  {getTotalItems() > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-[#ef4444] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white">
-                      {getTotalItems()}
-                    </span>
-                  )}
-                </button>
-              </div>
+                  <button onClick={() => handleProtectedAction('/cart')} className="relative flex items-center bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors">
+                    <span className="text-[13px] font-bold text-gray-700 mr-1.5">Giỏ hàng</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-[20px] h-[20px] text-[#2D982A]"><path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" /></svg>
+                    
+                    {getTotalItems() > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-[#ef4444] text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-sm border border-white">
+                        {getTotalItems()}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -219,6 +237,11 @@ export default function CustomerLayout() {
       <main className="flex-1 w-full flex flex-col">
         <Outlet />
       </main>
+
+      {/* RENDER MODAL TÙY VÀO TRẠNG THÁI */}
+      {authModal === 'login' && <Login />}
+      {authModal === 'register' && <Register />}
+      {authModal === 'forgot' && <ForgotPassword />}
 
       {/* FOOTER GIỮ NGUYÊN */}
       <footer className="w-full bg-white mt-auto flex flex-col">

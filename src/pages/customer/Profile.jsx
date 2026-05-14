@@ -15,7 +15,8 @@ const maskPhoneNumber = (phone) => {
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { token, logout, user: contextUser, login } = useCart();
+  const { token, logout, user: contextUser, login, openAuthModal } = useCart();
+  const isAdmin = contextUser?.role?.toUpperCase() === 'ADMIN' || contextUser?.role?.toUpperCase() === 'STAFF';
   
   // --- STATE PROFILE ---
   const [fullName, setFullName] = useState("");
@@ -24,13 +25,15 @@ const Profile = () => {
   const [dob, setDob] = useState("");
   const [phone, setPhone] = useState("");
   const [rewardPoints, setRewardPoints] = useState(0);
+  const [avatarUrl, setAvatarUrl] = useState("");
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false); // Trạng thái Edit Profile
+  const [uploadingAvatar, setUploadingAvatar] = useState(false); // Trạng thái Upload ảnh
 
-  // Logic đổi Avatar tĩnh dựa theo Gender
-  const avatarUrl = gender === "Nữ" 
+  // Logic đổi Avatar tĩnh dựa theo Gender nếu không có avatar
+  const defaultAvatarUrl = gender === "Nữ" 
         ? "https://api.dicebear.com/7.x/notionists/svg?seed=Aneka&backgroundColor=ffedd5" // Ảnh nữ
         : "https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=ffedd5"; // Ảnh nam
 
@@ -48,7 +51,8 @@ const Profile = () => {
   useEffect(() => {
     if (!token) {
       toast.error('Vui lòng đăng nhập để xem thông tin cá nhân!');
-      navigate('/login');
+      navigate('/');
+      openAuthModal('login');
       return;
     }
 
@@ -62,6 +66,7 @@ const Profile = () => {
           setDob(pData.birthday || "");
           setPhone(pData.phone || "");
           setRewardPoints(pData.rewardPoints || 0);
+          setAvatarUrl(pData.avatarUrl || "");
           if (pData.gender) setGender(pData.gender === "MALE" ? "Nam" : pData.gender === "FEMALE" ? "Nữ" : "Khác");
         }
 
@@ -73,13 +78,14 @@ const Profile = () => {
         if (error.response?.status === 401) {
           toast.error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
           logout();
-          navigate('/login');
+          navigate('/');
+          openAuthModal('login');
         }
       }
     };
 
     fetchData();
-  }, [token, navigate, logout]);
+  }, [token, navigate, logout, openAuthModal]);
 
   // --- HANDLERS PROFILE ---
   const handleUpdateProfile = async (e) => {
@@ -128,9 +134,50 @@ const Profile = () => {
             setFullName(pData.fullName || "");
             setEmail(pData.email || "");
             setDob(pData.birthday || "");
+            setAvatarUrl(pData.avatarUrl || "");
             if (pData.gender) setGender(pData.gender === "MALE" ? "Nam" : pData.gender === "FEMALE" ? "Nữ" : "Khác");
          }
      });
+  };
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Dung lượng ảnh phải dưới 2MB!');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const loadToast = toast.loading('Đang tải ảnh lên...');
+    setUploadingAvatar(true);
+    
+    try {
+      const res = await api.post('/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      if (res.data.status === 200) {
+        toast.success('Cập nhật ảnh đại diện thành công!', { id: loadToast });
+        setAvatarUrl(res.data.data?.avatarUrl || "");
+        
+        // Cập nhật avatar trên context header (tuỳ logic header)
+        if (contextUser) {
+          const updatedUser = { ...contextUser, avatarUrl: res.data.data?.avatarUrl };
+          localStorage.setItem('user', JSON.stringify(updatedUser));
+          localStorage.setItem('userData', JSON.stringify(updatedUser));
+        }
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Tải ảnh thất bại!', { id: loadToast });
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = null; // reset input
+    }
   };
 
 
@@ -313,8 +360,16 @@ const Profile = () => {
           <div className="lg:col-span-3">
             <div className="bg-[#eef8ef] rounded-2xl p-6 flex flex-col items-center border border-green-100 shadow-sm">
               {/* KHỐI AVATAR */}
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-sm overflow-hidden">
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              <div className="relative w-24 h-24 mb-4 group">
+                  <div className={`w-full h-full bg-white rounded-full flex items-center justify-center border-4 border-white shadow-sm overflow-hidden ${uploadingAvatar ? 'opacity-50' : ''}`}>
+                      <img src={avatarUrl || defaultAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  </div>
+                  {/* Nút overlay upload ảnh */}
+                  <label className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" /><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" /></svg>
+                      <input type="file" accept="image/jpeg, image/png" className="hidden" onChange={handleAvatarChange} disabled={uploadingAvatar} />
+                  </label>
+                  {uploadingAvatar && <div className="absolute inset-0 flex items-center justify-center"><div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div></div>}
               </div>
               <h2 className="font-black text-[18px] text-gray-900 mb-1 text-center">{fullName || contextUser?.name || "Khách hàng"}</h2>
               <p className="text-[14px] text-gray-600 mb-2">{maskPhoneNumber(phone)}</p>
@@ -329,13 +384,15 @@ const Profile = () => {
                   </div>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
                 </button>
-                <button onClick={() => navigate('/orders')} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors text-[14px] font-bold text-gray-700">
-                  <div className="flex items-center space-x-3">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
-                    <span>Lịch sử đơn hàng</span>
-                  </div>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
-                </button>
+                {!isAdmin && (
+                  <button onClick={() => navigate('/orders')} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-white transition-colors text-[14px] font-bold text-gray-700">
+                    <div className="flex items-center space-x-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" /></svg>
+                      <span>Lịch sử đơn hàng</span>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                  </button>
+                )}
               </div>
             </div>
           </div>

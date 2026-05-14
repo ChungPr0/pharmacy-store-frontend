@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import axiosClient from "../api/axiosClient";
+import api from "../api/axios";
 
 const CartContext = createContext();
 
@@ -7,6 +7,7 @@ export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
+  const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | 'forgot' | null
 
   // Initialize token and user on mount
   useEffect(() => {
@@ -26,50 +27,6 @@ export const CartProvider = ({ children }) => {
     }
   }, []);
 
-  const addToCart = (product) => {
-    setCartItems((prevItems) => {
-      const items = Array.isArray(prevItems) ? prevItems : [];
-      const existingItem = items.find((item) => item.id === product.id);
-      if (existingItem) {
-        return items.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
-            : item
-        );
-      }
-      return [...items, { ...product, quantity: product.quantity || 1 }];
-    });
-  };
-
-  const removeFromCart = (productId) => {
-    setCartItems((prevItems) => {
-      const items = Array.isArray(prevItems) ? prevItems : [];
-      return items.filter((item) => item.id !== productId);
-    });
-  };
-
-  const updateQuantity = (productId, quantity) => {
-    if (quantity <= 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCartItems((prevItems) => {
-      const items = Array.isArray(prevItems) ? prevItems : [];
-      return items.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      );
-    });
-  };
-
-  const clearCart = () => {
-    setCartItems([]);
-  };
-
-  const getTotalPrice = () => {
-    if (!Array.isArray(cartItems)) return 0;
-    return cartItems.reduce((total, item) => total + (item.price || 0) * (item.quantity || 0), 0);
-  };
-
   const getTotalItems = () => {
     if (!Array.isArray(cartItems)) return 0;
     return cartItems.reduce((total, item) => total + (item.quantity || 0), 0);
@@ -78,7 +35,7 @@ export const CartProvider = ({ children }) => {
   const fetchCart = async () => {
     if (!token) return;
     try {
-      const response = await axiosClient.get("/cart");
+      const response = await api.get("/cart");
       if (response.data?.data) {
         const data = response.data.data;
         // Ensure we always set an array
@@ -106,7 +63,7 @@ export const CartProvider = ({ children }) => {
     
     // Fetch cart with new token
     try {
-      const response = await axiosClient.get("/cart", {
+      const response = await api.get("/cart", {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (response.data?.data) {
@@ -135,13 +92,11 @@ export const CartProvider = ({ children }) => {
     setCartItems([]);
   };
 
+  const openAuthModal = (type) => setAuthModal(type);
+  const closeAuthModal = () => setAuthModal(null);
+
   const value = {
     cartItems,
-    addToCart,
-    removeFromCart,
-    updateQuantity,
-    clearCart,
-    getTotalPrice,
     getTotalItems,
     fetchCart,
     user,
@@ -150,6 +105,9 @@ export const CartProvider = ({ children }) => {
     setToken,
     logout,
     login,
+    authModal,
+    openAuthModal,
+    closeAuthModal,
   };
 
   return (

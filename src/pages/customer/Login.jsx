@@ -13,7 +13,11 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
-  const { login } = useCart();
+  const { login, closeAuthModal, openAuthModal, authModal } = useCart();
+
+  // Nếu không phải modal đang bật (khi component này được render như modal)
+  // và nếu dùng như page riêng thì authModal undefined
+
 
   // Auto-fill phone từ đăng ký xong
   useEffect(() => {
@@ -55,12 +59,13 @@ const Login = () => {
         login(userData, token, refreshTokenValue);
 
         toast.success("Đăng nhập thành công!");
-        // Chờ context update trước khi navigate
+        // Chờ context update trước khi navigate hoặc đóng modal
         setTimeout(() => {
-          if (userData.role === 'ADMIN' || userData.role === 'admin') {
-            navigate("/admin");
+          if (closeAuthModal) {
+            closeAuthModal();
           } else {
-            navigate("/");
+            if (userData.role === 'ADMIN' || userData.role === 'admin') navigate("/admin");
+            else navigate("/");
           }
         }, 500);
       } else {
@@ -79,22 +84,26 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
-      {/* LEFT SIDE */}
-      <div className="w-1/2 bg-gray-100 flex items-center justify-center">
-        <img
-          src="/pharmacy.png"
-          alt="pharmacy"
-          className="w-full h-full object-cover"
-        />
-      </div>
+    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm p-4 antialiased">
+      <div className="bg-white rounded-3xl shadow-2xl flex max-w-[900px] w-full min-h-[500px] overflow-hidden relative animate-in fade-in zoom-in-95 duration-300">
+        <button type="button" onClick={() => closeAuthModal ? closeAuthModal() : navigate('/')} className="absolute top-4 right-4 z-10 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-700"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+        {/* LEFT SIDE */}
+        <div className="hidden md:flex w-1/2 bg-gray-100 items-center justify-center relative">
+          <img
+            src="/pharmacy.png"
+            alt="pharmacy"
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        </div>
 
-      {/* RIGHT SIDE */}
-      <div className="w-1/2 bg-green-50 flex items-center justify-center">
-        <form
-          onSubmit={handleLogin}
-          className="w-96"
-        >
+        {/* RIGHT SIDE */}
+        <div className="w-full md:w-1/2 bg-green-50/50 flex items-center justify-center p-8 lg:p-12 relative">
+          <form
+            onSubmit={handleLogin}
+            className="w-full max-w-[360px]"
+          >
           <h2 className="text-2xl font-bold text-green-700 mb-8 text-center">
             ĐĂNG NHẬP
           </h2>
@@ -145,16 +154,16 @@ const Login = () => {
 
           {/* REMEMBER */}
           <div className="flex justify-between items-center mb-6 text-sm">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" />
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" className="w-4 h-4 accent-green-600 cursor-pointer" />
               Nhớ mật khẩu
             </label>
-            <Link
-              to="/forgot-password"
-              className="text-green-600 text-sm hover:underline"
+            <span
+              onClick={() => openAuthModal ? openAuthModal('forgot') : navigate('/forgot-password')}
+              className="text-green-600 text-sm hover:underline cursor-pointer font-medium"
             >
               Quên mật khẩu
-            </Link>
+            </span>
           </div>
 
           {/* BUTTON */}
@@ -165,15 +174,17 @@ const Login = () => {
             {loading ? "ĐANG XỬ LÝ..." : "ĐĂNG NHẬP"}
           </button>
 
-          <p className="text-center text-sm mt-6">
+          <p className="text-center text-sm mt-6 text-gray-600">
             Chưa có tài khoản?  
-            <Link to="/register">
-            <span className="text-green-600 cursor-pointer ml-1 font-medium hover:underline">
+            <span 
+              onClick={() => openAuthModal ? openAuthModal('register') : navigate('/register')}
+              className="text-green-600 cursor-pointer ml-1 font-bold hover:underline"
+            >
               Đăng ký ngay
             </span>
-            </Link>
           </p>
         </form>
+        </div>
       </div>
     </div>
   );

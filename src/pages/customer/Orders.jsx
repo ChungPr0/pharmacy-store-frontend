@@ -324,7 +324,9 @@ const OrderItem = ({ order, profileData }) => {
 // --- COMPONENT CHÍNH: TRANG ORDERS ---
 const Orders = () => {
   const navigate = useNavigate();
-  const { user, token, logout } = useCart();
+  const { user, token, logout, openAuthModal } = useCart();
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'STAFF';
+
   
   const [orders, setOrders] = useState([]);
   const [profileData, setProfileData] = useState(null);
@@ -342,9 +344,15 @@ const Orders = () => {
   useEffect(() => {
     if (!token) {
       toast.error('Vui lòng đăng nhập để xem lịch sử đơn hàng');
-      navigate('/login');
+      navigate('/');
+      openAuthModal('login');
+      return;
     }
-  }, [token, navigate]);
+    if (isAdmin) {
+      toast.error('Tài khoản quản trị không có lịch sử đơn hàng.');
+      navigate('/');
+    }
+  }, [token, navigate, isAdmin, openAuthModal]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -364,7 +372,8 @@ const Orders = () => {
         if (error.response?.status === 401) {
           toast.error('Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!');
           logout();
-          navigate('/login');
+          navigate('/');
+          if (openAuthModal) openAuthModal('login');
         } else {
           toast.error('Không thể tải dữ liệu');
         }
@@ -374,7 +383,7 @@ const Orders = () => {
     };
 
     if (token) fetchData();
-  }, [token, logout, navigate]);
+  }, [token, logout, navigate, openAuthModal]);
 
   const filteredOrders = activeTab === 'ALL' 
     ? orders 
@@ -398,9 +407,9 @@ const Orders = () => {
             <div className="bg-[#eef8ef] rounded-2xl p-6 flex flex-col items-center border border-green-100 h-full">
               <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 border-4 border-white shadow-sm overflow-hidden p-1">
                 <img 
-                    src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=ffedd5" 
-                    alt="Avatar Mặc định" 
-                    className="w-full h-full object-cover" 
+                    src={profileData?.avatarUrl || "https://api.dicebear.com/7.x/notionists/svg?seed=Felix&backgroundColor=ffedd5"} 
+                    alt="Avatar" 
+                    className="w-full h-full object-cover rounded-full" 
                 />
               </div>
               <h2 className="font-black text-[18px] text-gray-900 mb-1 text-center">
