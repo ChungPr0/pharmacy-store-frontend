@@ -5,27 +5,28 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cartItems, setCartItems] = useState([]);
-  const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token") || null);
-  const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | 'forgot' | null
-
-  // Initialize token and user on mount
-  useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+  const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
-    
-    if (storedToken) {
-      setToken(storedToken);
-    }
-    
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
+        return JSON.parse(storedUser);
       } catch (error) {
         console.error("Error parsing stored user:", error);
+        return null;
       }
     }
-  }, []);
+    return null;
+  });
+  const [authModal, setAuthModal] = useState(null); // 'login' | 'register' | 'forgot' | null
+
+  // Đảm bảo sync lại nếu có thay đổi ngoài context (mở rộng sau này)
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken && storedToken !== token) {
+      setToken(storedToken);
+    }
+  }, [token]);
 
   const getTotalItems = () => {
     if (!Array.isArray(cartItems)) return 0;
@@ -34,6 +35,9 @@ export const CartProvider = ({ children }) => {
 
   const fetchCart = async () => {
     if (!token) return;
+    // Không fetch cart cho Admin và Staff vì backend sẽ từ chối
+    if (user?.role?.toUpperCase() === 'ADMIN' || user?.role?.toUpperCase() === 'STAFF') return;
+
     try {
       const response = await api.get("/cart");
       if (response.data?.data) {

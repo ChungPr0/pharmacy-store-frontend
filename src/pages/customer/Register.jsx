@@ -104,14 +104,21 @@ const Register = () => {
         setCountdown(response.data.data?.otpTimeout || 60);
       }
     } catch (error) {
-      console.error('OTP Error Details:', {
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        data: error.response?.data,
-        url: error.config?.url
-      });
-      const errorMsg = error.response?.data?.message || error.message || "Lỗi gửi mã OTP";
-      toast.error(errorMsg);
+      console.error('OTP Error Details:', error.response?.data);
+      const errorData = error.response?.data;
+      
+      // Lỗi chi tiết (VD: data.phone = "Số điện thoại không đúng định dạng VN")
+      if (errorData?.data?.phone) {
+        setErrors(prev => ({...prev, phone: errorData.data.phone}));
+        toast.error(errorData.data.phone);
+      } 
+      // Lỗi chung (message)
+      else if (errorData?.message) {
+        toast.error(errorData.message);
+      } 
+      else {
+        toast.error("Lỗi gửi mã OTP. Vui lòng thử lại!");
+      }
     } finally {
       setLoading(false);
     }

@@ -35,6 +35,81 @@ const Checkout = () => {
   });
   const [addressLoading, setAddressLoading] = useState(false);
 
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [wards, setWards] = useState([]);
+
+  useEffect(() => {
+    if (showAddressForm) {
+      fetch('https://esgoo.net/api-tinhthanh/1/0.htm')
+        .then(res => res.json())
+        .then(data => {
+            if (data.error === 0) {
+               setProvinces(data.data);
+               if (addressForm.province) {
+                  const p = data.data.find(x => x.full_name === addressForm.province || x.name === addressForm.province || addressForm.province.includes(x.name));
+                  if (p) {
+                      fetch(`https://esgoo.net/api-tinhthanh/2/${p.id}.htm`)
+                        .then(res => res.json())
+                        .then(dData => {
+                            if (dData.error === 0) {
+                                setDistricts(dData.data);
+                                if (addressForm.district) {
+                                    const d = dData.data.find(x => x.full_name === addressForm.district || x.name === addressForm.district || addressForm.district.includes(x.name));
+                                    if (d) {
+                                        fetch(`https://esgoo.net/api-tinhthanh/3/${d.id}.htm`)
+                                          .then(res => res.json())
+                                          .then(wData => {
+                                              if (wData.error === 0) setWards(wData.data);
+                                          });
+                                    }
+                                }
+                            }
+                        });
+                  }
+               }
+            }
+        });
+    } else {
+        setDistricts([]);
+        setWards([]);
+    }
+  }, [showAddressForm]);
+
+  const handleProvinceChange = (e) => {
+      const pId = e.target.options[e.target.selectedIndex].getAttribute('data-id');
+      const pName = e.target.value;
+      setAddressForm({...addressForm, province: pName, district: '', ward: ''});
+      setDistricts([]);
+      setWards([]);
+      if (pId) {
+          fetch(`https://esgoo.net/api-tinhthanh/2/${pId}.htm`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error === 0) setDistricts(data.data);
+            });
+      }
+  };
+
+  const handleDistrictChange = (e) => {
+      const dId = e.target.options[e.target.selectedIndex].getAttribute('data-id');
+      const dName = e.target.value;
+      setAddressForm({...addressForm, district: dName, ward: ''});
+      setWards([]);
+      if (dId) {
+          fetch(`https://esgoo.net/api-tinhthanh/3/${dId}.htm`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error === 0) setWards(data.data);
+            });
+      }
+  };
+
+  const handleWardChange = (e) => {
+      const wName = e.target.value;
+      setAddressForm({...addressForm, ward: wName});
+  };
+
   // --- STATE ĐẶT HÀNG ---
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [orderCode, setOrderCode] = useState('');
@@ -143,7 +218,14 @@ const Checkout = () => {
         }
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Thao tác thất bại!");
+      const errorData = error.response?.data;
+      if (errorData?.data && typeof errorData.data === 'object') {
+        // Nếu có lỗi ở từng field (như phoneNumber)
+        const fieldErrors = Object.values(errorData.data).join(", ");
+        toast.error(fieldErrors || errorData.message || "Thao tác thất bại!");
+      } else {
+        toast.error(errorData?.message || "Thao tác thất bại!");
+      }
     } finally {
       setAddressLoading(false);
     }
@@ -277,32 +359,41 @@ const Checkout = () => {
                     <div 
                       key={addr.id} 
                       onClick={() => setSelectedAddressId(addr.id)}
-                      className={`bg-white p-5 rounded-xl border cursor-pointer transition-all duration-200 ${
-                        selectedAddressId === addr.id ? 'border-2 border-[#2D982A] shadow-sm' : 'border border-gray-200 hover:border-[#2D982A]'
+                      className={`bg-white rounded-xl p-6 border transition-all duration-300 relative group cursor-pointer ${
+                        selectedAddressId === addr.id ? 'border-[#2D982A] ring-1 ring-[#2D982A] shadow-[0_4px_20px_rgb(45,152,42,0.1)]' : 'border-gray-200 hover:border-[#2D982A] hover:shadow-md'
                       }`}
                     >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center space-x-2 text-[15px]">
-                          <span className="font-bold text-black">{addr.receiverName}</span>
-                          <span className="text-gray-300">|</span>
-                          <span className="font-bold text-black">{maskPhoneNumber(addr.phoneNumber)}</span>
-                        </div>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleOpenAddressForm(addr); }} 
-                          className="px-4 py-1 text-[13px] border border-gray-800 text-gray-800 rounded-full hover:bg-gray-100 font-medium"
-                        >
-                          Chỉnh sửa
-                        </button>
+                      <div className="absolute top-5 right-5">
+                         {selectedAddressId === addr.id && (
+                           <div className="w-7 h-7 bg-[#2D982A] rounded-full flex items-center justify-center shadow-md animate-in zoom-in duration-300">
+                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4 text-white"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                           </div>
+                         )}
                       </div>
-                      <p className="text-[14px] text-gray-800 mb-4 leading-relaxed pr-10 pl-7">
+
+                      <div className="flex items-center space-x-3 mb-3 pr-14">
+                        <span className="font-black text-[16px] text-gray-900">{addr.receiverName}</span>
+                        <span className="text-gray-300">|</span>
+                        <span className="font-bold text-[15px] text-gray-700">{maskPhoneNumber(addr.phoneNumber)}</span>
+                        {addr.isDefault && <span className="text-[11px] font-bold bg-green-50 text-[#2D982A] px-2.5 py-1 rounded-md border border-green-200 uppercase tracking-wide">Mặc định</span>}
+                      </div>
+
+                      <p className={`text-[15px] text-gray-600 leading-relaxed ${selectedAddressId !== addr.id ? 'mb-5' : 'mb-3'}`}>
                         {addr.detailAddress}, {addr.ward}, {addr.district}, {addr.province}
                       </p>
-                      
-                      <div className="flex items-center">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-2.5 transition-colors ${selectedAddressId === addr.id ? 'border-[#2D982A]' : 'border-gray-400'}`}>
-                          {selectedAddressId === addr.id && <div className="w-2.5 h-2.5 bg-[#2D982A] rounded-full"></div>}
-                        </div>
-                        <span className="text-[14px] font-medium text-gray-900">Đặt làm địa chỉ mặc định</span>
+
+                      <div className={`flex items-center ${selectedAddressId !== addr.id ? 'pt-5 border-t border-gray-100/60' : 'pt-3 border-t border-gray-100/60'}`}>
+                        {selectedAddressId !== addr.id ? (
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedAddressId(addr.id); }} className="flex items-center space-x-2 px-5 py-2 rounded-full text-[13px] font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-[0_4px_15px_rgb(79,70,229,0.4)] transition-all duration-300 group hover:-translate-y-0.5 w-full justify-center md:w-auto md:justify-start">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4 group-hover:scale-110 transition-transform"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                            <span>Giao đến địa chỉ này</span>
+                          </button>
+                        ) : (
+                          <div className="flex-1"></div>
+                        )}
+                        <button onClick={(e) => { e.stopPropagation(); handleOpenAddressForm(addr); }} className={`px-4 py-1.5 text-[12px] font-bold border border-gray-300 text-gray-700 rounded-full hover:border-[#2D982A] hover:text-[#2D982A] transition-colors ${selectedAddressId !== addr.id ? 'ml-auto' : ''}`}>
+                          Chỉnh sửa
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -311,9 +402,10 @@ const Checkout = () => {
                   <div className="flex justify-center pt-6">
                       <button 
                         onClick={() => handleOpenAddressForm()} 
-                        className="px-8 py-2.5 bg-[#2D982A] text-white rounded-full font-bold text-[14px] hover:bg-green-700 transition-colors shadow-sm"
+                        className="flex items-center space-x-2 px-8 py-2.5 bg-gradient-to-r from-[#2D982A] to-[#258022] text-white rounded-full font-bold text-[14px] hover:shadow-[0_4px_15px_rgb(45,152,42,0.3)] transition-all duration-300 hover:-translate-y-0.5 shadow-md"
                       >
-                        Thêm địa chỉ
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                        <span>Thêm địa chỉ giao hàng</span>
                       </button>
                   </div>
                 </div>
@@ -337,14 +429,24 @@ const Checkout = () => {
                     <label className="w-[130px] text-[14px] font-medium text-black mt-2 mb-2 md:mb-0">Địa chỉ:</label>
                     <div className="flex-1 flex flex-col space-y-3">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <select required value={addressForm.province} onChange={e => setAddressForm({...addressForm, province: e.target.value})} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px] text-gray-700">
-                          <option value="">Tỉnh/ Thành</option>
-                          <option value="Hà Nội">Hà Nội</option>
-                          <option value="Hồ Chí Minh">TP Hồ Chí Minh</option>
-                          <option value="Đà Nẵng">Đà Nẵng</option>
+                        <select required value={addressForm.province} onChange={handleProvinceChange} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px] bg-white">
+                          <option value="" data-id="">Chọn Tỉnh/Thành</option>
+                          {provinces.map(p => (
+                            <option key={p.id} value={p.full_name} data-id={p.id}>{p.full_name}</option>
+                          ))}
                         </select>
-                        <input required type="text" value={addressForm.district} onChange={e => setAddressForm({...addressForm, district: e.target.value})} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px] text-gray-700" placeholder="Quận/ Huyện" />
-                        <input required type="text" value={addressForm.ward} onChange={e => setAddressForm({...addressForm, ward: e.target.value})} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px] text-gray-700" placeholder="Phường/ Xã" />
+                        <select required value={addressForm.district} onChange={handleDistrictChange} disabled={!addressForm.province || districts.length === 0} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px] bg-white disabled:bg-gray-100">
+                          <option value="" data-id="">Chọn Quận/Huyện</option>
+                          {districts.map(d => (
+                            <option key={d.id} value={d.full_name} data-id={d.id}>{d.full_name}</option>
+                          ))}
+                        </select>
+                        <select required value={addressForm.ward} onChange={handleWardChange} disabled={!addressForm.district || wards.length === 0} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px] bg-white disabled:bg-gray-100">
+                          <option value="">Chọn Phường/Xã</option>
+                          {wards.map(w => (
+                            <option key={w.id} value={w.full_name}>{w.full_name}</option>
+                          ))}
+                        </select>
                       </div>
                       <input required type="text" value={addressForm.detailAddress} onChange={e => setAddressForm({...addressForm, detailAddress: e.target.value})} className="w-full p-2 border border-gray-300 rounded outline-none focus:border-[#2D982A] text-[14px]" placeholder="Số nhà/ tòa nhà cụ thể..." />
                     </div>

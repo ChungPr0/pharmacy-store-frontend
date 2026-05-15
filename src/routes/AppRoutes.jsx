@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CustomerLayout from '../layouts/CustomerLayout';
 import Home from '../pages/customer/Home';
 import Register from '../pages/customer/Register';
@@ -11,8 +11,9 @@ import Login from '../pages/customer/Login';
 import ForgotPassword from '../pages/customer/ForgotPassword';
 import Category from '../pages/customer/Category';
 import SearchResults from '../pages/customer/SearchResults';
-import CustomerOrders from '../pages/customer/Orders';
+
 import Profile from '../pages/customer/Profile';
+
 import NotFound from '../pages/customer/NotFound';
 
 import AdminLayout from '../layouts/AdminLayout';
@@ -34,7 +35,6 @@ export default function AppRoutes() {
         <Route path="/" element={<CustomerLayout />}>
           <Route index element={<Home />} />
           
-          <Route path="forgot-password" element={<ForgotPassword />} />
           <Route path="product/:slug" element={<ProductDetail />} />
           <Route path="cart" element={<Cart />} />
           <Route path="search" element={<SearchResults />} />
@@ -43,13 +43,20 @@ export default function AppRoutes() {
           <Route path="support" element={<Support />} />
           <Route path="category/:slug" element={<Category />} />
           <Route path="checkout" element={<Checkout />} />
-          <Route path="orders" element={<CustomerOrders />} />
-          <Route path="profile" element={<Profile />} />
+
+          <Route element={<Profile />}>
+            <Route path="profile" />
+            <Route path="orders" />
+          </Route>
           {/* CATCH-ALL ROUTE DÀNH CHO CÁC URL SAI HOẶC KHÔNG TỒN TẠI */}
           <Route path="*" element={<NotFound />} />
         </Route>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        
+        {/* CHUYỂN HƯỚNG CÁC ROUTE AUTH CŨ THÀNH MODAL POPUP Ở TRANG CHỦ */}
+        <Route path="/login" element={<Navigate to="/" state={{ authModal: 'login' }} replace />} />
+        <Route path="/register" element={<Navigate to="/" state={{ authModal: 'register' }} replace />} />
+        <Route path="/forgot-password" element={<Navigate to="/" state={{ authModal: 'forgot' }} replace />} />
+        
         {/* ADMIN ROUTES */}
         <Route
           path="/admin"

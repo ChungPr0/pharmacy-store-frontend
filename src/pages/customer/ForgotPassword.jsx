@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import api from "../../api/axios";
 import { useCart } from "../../contexts/CartContext";
 
@@ -16,42 +17,59 @@ const ForgotPassword = () => {
 
   const handleSendOtp = async () => {
     try {
-      await api.post("/auth/forgot-password/request-otp", { phone });
-      alert("Đã gửi OTP");
-    } catch {
-      alert("Lỗi gửi OTP");
+      const res = await api.post("/auth/forgot-password/request-otp", { phone });
+      toast.success(res.data?.message || "Đã gửi mã OTP!");
+    } catch (error) {
+      const errorData = error.response?.data;
+      if (errorData?.data?.phone) {
+        toast.error(errorData.data.phone);
+      } else if (errorData?.message) {
+        toast.error(errorData.message);
+      } else {
+        toast.error("Lỗi gửi OTP. Vui lòng thử lại!");
+      }
     }
   };
 
   const handleVerifyOtp = async () => {
+    if (!otp) return toast.error("Vui lòng nhập mã OTP");
     try {
-      await api.post("/auth/forgot-password/verify-otp", {
+      const res = await api.post("/auth/forgot-password/verify-otp", {
         phone,
         otpCode: otp,
       });
+      toast.success(res.data?.message || "Mã OTP hợp lệ!");
       setStep(2);
-    } catch {
-      alert("OTP sai");
+    } catch (error) {
+      const errorData = error.response?.data;
+      if (errorData?.data?.otpCode) {
+        toast.error(errorData.data.otpCode);
+      } else if (errorData?.message) {
+        toast.error(errorData.message);
+      } else {
+        toast.error("Mã OTP không hợp lệ hoặc đã hết hạn");
+      }
     }
   };
 
   const handleResetPassword = async () => {
     if (password !== confirmPassword) {
-      alert("Mật khẩu không khớp");
+      toast.error("Mật khẩu nhập lại không khớp");
       return;
     }
 
     try {
-      await api.post("/api/v1/auth/forgot-password/reset", {
+      const res = await api.post("/auth/forgot-password/reset", {
         phone,
         otpCode: otp,
         newPassword: password,
       });
-      alert("Thành công");
+      toast.success(res.data?.message || "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
       if (openAuthModal) openAuthModal('login');
       else navigate("/login");
-    } catch {
-      alert("Lỗi");
+    } catch (error) {
+      const errorData = error.response?.data;
+      toast.error(errorData?.message || "Đổi mật khẩu thất bại. Vui lòng thử lại!");
     }
   };
 

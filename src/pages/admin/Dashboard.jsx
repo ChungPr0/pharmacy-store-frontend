@@ -85,7 +85,7 @@ const Dashboard = () => {
   if (isLoading) {
     return (
       <div className="h-full flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-emerald-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-200 border-t-[#2D982A]"></div>
       </div>
     );
   }
@@ -161,7 +161,7 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60 lg:col-span-2">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-slate-800">Đơn hàng gần đây</h3>
-            <Link to="/admin/orders" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700">Xem tất cả</Link>
+            <Link to="/admin/orders" className="text-sm font-semibold text-[#2D982A] hover:text-green-700">Xem tất cả</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left whitespace-nowrap">
@@ -212,7 +212,7 @@ const Dashboard = () => {
             ) : (
               topProducts.map((product) => (
                 <li key={product.id} className="flex items-center gap-4 group">
-                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-emerald-500 group-hover:bg-emerald-50 transition-colors overflow-hidden border border-slate-100">
+                  <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-[#2D982A] group-hover:bg-[#eef8ef] transition-colors overflow-hidden border border-slate-100">
                     {product.images && product.images.length > 0 ? (
                       <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
