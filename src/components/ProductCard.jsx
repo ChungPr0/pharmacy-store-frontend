@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import api from '../api/axios';
+import { useCart } from '../contexts/CartContext';
 
 const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -14,6 +15,7 @@ const ProductCard = ({
   className = ""
 }) => {
   const navigate = useNavigate();
+  const { openAuthModal } = useCart();
   // Support both 'product' and 'item' prop names for flexibility
   const productData = product || item;
   
@@ -25,7 +27,7 @@ const ProductCard = ({
     const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
-      navigate('/login');
+      openAuthModal('login');
       return;
     }
 

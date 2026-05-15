@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 
 const Products = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [flatCategories, setFlatCategories] = useState([]);
 
@@ -14,10 +17,18 @@ const Products = () => {
   const [keyword, setKeyword] = useState("");
   const [categorySlug, setCategorySlug] = useState("");
 
-  // Form State
   const [showForm, setShowForm] = useState(false);
   const [isEdit, setIsEdit] = useState(false);
   const [editSlug, setEditSlug] = useState("");
+
+  // Reviews State
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [selectedProductForReviews, setSelectedProductForReviews] = useState(null);
+  const [productReviews, setProductReviews] = useState([]);
+  const [reviewsPageNo, setReviewsPageNo] = useState(0);
+  const [reviewsTotalPages, setReviewsTotalPages] = useState(1);
+  const [replyingReviewId, setReplyingReviewId] = useState(null);
+  const [replyMessage, setReplyMessage] = useState("");
 
   // Form Fields
   const [name, setName] = useState("");
@@ -82,6 +93,19 @@ const Products = () => {
   useEffect(() => {
     fetchProducts();
   }, [pageNo, pageSize, keyword, categorySlug]);
+
+  // Handle openReviewProductId from query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openReviewProductId = params.get("openReviewProductId");
+    const openReviewProductName = params.get("openReviewProductName");
+    if (openReviewProductId) {
+      handleOpenReviews({ id: openReviewProductId, name: openReviewProductName || "Sản phẩm" });
+      params.delete("openReviewProductId");
+      params.delete("openReviewProductName");
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location, navigate]);
 
   // --- FORM HANDLERS ---
   const handleOpenAdd = () => {
@@ -189,6 +213,74 @@ const Products = () => {
       toast.error(err.response?.data?.message || "Lỗi đổi trạng thái");
     }
   };
+
+  // --- REVIEWS HANDLERS ---
+  const handleOpenReviews = (product) => {
+    setSelectedProductForReviews(product);
+    setShowReviewsModal(true);
+    fetchReviewsForProduct(product.id, 0);
+  };
+
+  const fetchReviewsForProduct = async (productId, page = 0) => {
+    try {
+      const res = await api.get(`/products/${productId}/reviews?pageNo=${page}&pageSize=10`);
+      if (res.data.status === 200) {
+        const data = res.data.data;
+        if (page === 0) {
+          setProductReviews(data.content || []);
+        } else {
+          setProductReviews(prev => [...prev, ...(data.content || [])]);
+        }
+        setReviewsPageNo(data.pageNo);
+        setReviewsTotalPages(data.totalPages);
+      }
+    } catch (err) {
+      toast.error("Lỗi khi tải danh sách đánh giá");
+    }
+  };
+
+  const handleReplyReview = async (reviewId) => {
+    if (!replyMessage.trim()) {
+      toast.error("Vui lòng nhập nội dung trả lời");
+      return;
+    }
+    try {
+      const res = await api.patch(`/admin/reviews/${reviewId}/reply`, {
+        replyMessage: replyMessage.trim()
+      });
+      if (res.data.status === 200 || res.status === 200) {
+        toast.success("Đã trả lời đánh giá");
+        setReplyingReviewId(null);
+        setReplyMessage("");
+        // Tải lại reviews từ trang 0 để thấy phản hồi
+        fetchReviewsForProduct(selectedProductForReviews.id, 0);
+        window.dispatchEvent(new Event('reloadNotifications'));
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Lỗi khi trả lời đánh giá");
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (window.confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) {
+      try {
+        const res = await api.delete(`/admin/reviews/${reviewId}`);
+        if (res.data.status === 200 || res.status === 200) {
+          toast.success("Xóa đánh giá thành công");
+          fetchReviewsForProduct(selectedProductForReviews.id, reviewsPageNo);
+          window.dispatchEvent(new Event('reloadNotifications'));
+        }
+      } catch (err) {
+        toast.error(err.response?.data?.message || "Lỗi khi xóa đánh giá");
+      }
+    }
+  };
+
+  const StarIcon = ({ filled }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={filled ? "#f59e0b" : "none"} stroke={filled ? "#f59e0b" : "currentColor"} strokeWidth={1.5} className="w-4 h-4">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+    </svg>
+  );
 
   // --- DYNAMIC FIELDS HELPERS ---
   const handleImageChange = (index, value) => {
@@ -338,6 +430,15 @@ const Products = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenReviews(item)}
+                          className="w-8 h-8 flex items-center justify-center text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors border border-transparent hover:border-purple-200"
+                          title="Xem đánh giá"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                          </svg>
+                        </button>
                         <button
                           onClick={() => handleOpenEdit(item.slug)}
                           className="w-8 h-8 flex items-center justify-center text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-transparent hover:border-blue-200"
@@ -624,6 +725,136 @@ const Products = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* MODAL REVIEWS */}
+      {showReviewsModal && selectedProductForReviews && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl my-8 relative flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="flex flex-col p-6 border-b border-gray-100">
+               <div className="flex items-center justify-between mb-2">
+                 <h3 className="text-xl font-bold text-gray-800">
+                   Quản lý đánh giá
+                 </h3>
+                 <button
+                    onClick={() => setShowReviewsModal(false)}
+                    className="text-gray-400 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-full p-2 transition-colors"
+                 >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                 </button>
+               </div>
+               <p className="text-sm text-gray-500 font-medium">Sản phẩm: <span className="text-emerald-600 font-bold">{selectedProductForReviews.name}</span></p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 bg-gray-50/50">
+              {productReviews.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                  </svg>
+                  Chưa có đánh giá nào.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {productReviews.map(r => (
+                    <div key={r.id} className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <div className="font-bold text-gray-800 text-sm">{r.userFullName}</div>
+                          <div className="flex gap-0.5 mt-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <StarIcon key={star} filled={star <= r.rating} />
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <div className="text-xs text-gray-400">
+                            {new Date(r.createdAt).toLocaleDateString('vi-VN')}
+                          </div>
+                          <button
+                            onClick={() => handleDeleteReview(r.id)}
+                            className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1 transition-colors"
+                            title="Xóa đánh giá này"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-3.5 h-3.5">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                            Xóa
+                          </button>
+                        </div>
+                      </div>
+                      
+                      <p className="text-sm text-gray-700 mb-3 whitespace-pre-line">{r.comment}</p>
+                      
+                      {r.adminReply ? (
+                        <div className="bg-emerald-50/50 p-3 rounded-lg border border-emerald-100 ml-4 relative">
+                          <div className="absolute -left-2 top-3 w-4 h-px bg-emerald-200"></div>
+                          <div className="absolute -left-2 top-0 w-px h-3 bg-emerald-200"></div>
+                          <span className="text-xs font-bold text-emerald-700 block mb-1">Nhà thuốc trả lời:</span>
+                          <p className="text-sm text-gray-700">{r.adminReply}</p>
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-right">
+                          {replyingReviewId === r.id ? (
+                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mt-2 text-left">
+                              <textarea
+                                value={replyMessage}
+                                onChange={(e) => setReplyMessage(e.target.value)}
+                                placeholder="Nhập câu trả lời của bạn..."
+                                className="w-full text-sm p-2 border border-gray-300 rounded focus:ring-emerald-500 focus:border-emerald-500 min-h-[80px]"
+                              />
+                              <div className="flex justify-end gap-2 mt-2">
+                                <button
+                                  onClick={() => setReplyingReviewId(null)}
+                                  className="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                                >
+                                  Hủy
+                                </button>
+                                <button
+                                  onClick={() => handleReplyReview(r.id)}
+                                  className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
+                                >
+                                  Gửi trả lời
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                setReplyingReviewId(r.id);
+                                setReplyMessage("");
+                              }}
+                              className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded hover:bg-emerald-100 transition-colors"
+                            >
+                              Trả lời
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  {reviewsPageNo + 1 < reviewsTotalPages && (
+                    <div className="flex justify-center mt-4">
+                      <button
+                        onClick={() => fetchReviewsForProduct(selectedProductForReviews.id, reviewsPageNo + 1)}
+                        className="text-sm font-medium text-emerald-600 hover:text-emerald-700"
+                      >
+                        Tải thêm đánh giá...
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
           </div>
         </div>
       )}

@@ -7,7 +7,7 @@ import { useCart } from '../../contexts/CartContext';
 
 const Register = () => {
   const navigate = useNavigate();
-  const { setUser } = useCart();
+  const { openAuthModal, closeAuthModal } = useCart();
   const [formData, setFormData] = useState({
     fullName: '', phone: '', email: '',
     gender: 'MALE', password: '', confirmPassword: '', otpCode: ''
@@ -104,14 +104,21 @@ const Register = () => {
         setCountdown(response.data.data?.otpTimeout || 60);
       }
     } catch (error) {
-      console.error('OTP Error Details:', {
-        status: error.response?.status,
-        message: error.response?.data?.message,
-        data: error.response?.data,
-        url: error.config?.url
-      });
-      const errorMsg = error.response?.data?.message || error.message || "Lỗi gửi mã OTP";
-      toast.error(errorMsg);
+      console.error('OTP Error Details:', error.response?.data);
+      const errorData = error.response?.data;
+      
+      // Lỗi chi tiết (VD: data.phone = "Số điện thoại không đúng định dạng VN")
+      if (errorData?.data?.phone) {
+        setErrors(prev => ({...prev, phone: errorData.data.phone}));
+        toast.error(errorData.data.phone);
+      } 
+      // Lỗi chung (message)
+      else if (errorData?.message) {
+        toast.error(errorData.message);
+      } 
+      else {
+        toast.error("Lỗi gửi mã OTP. Vui lòng thử lại!");
+      }
     } finally {
       setLoading(false);
     }
@@ -140,7 +147,10 @@ const Register = () => {
         if (response.data.data?.phone) {
           localStorage.setItem('registeredPhone', response.data.data.phone);
         }
-        setTimeout(() => navigate('/login'), 1500);
+        setTimeout(() => {
+          if (openAuthModal) openAuthModal('login');
+          else navigate('/login');
+        }, 1500);
       }
     } catch (error) {
       const errorData = error.response?.data;
@@ -174,11 +184,16 @@ const Register = () => {
   }, []);
 
   return (
-    <main className="flex-1 w-full bg-[#f8f9fa] py-12 px-4 sm:px-6 flex justify-center items-center font-sans antialiased">
+    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm p-4 antialiased overflow-y-auto">
       
       {/* KHỐI CARD ĐĂNG KÝ BỌC NGOÀI */}
-      <div className="bg-white rounded-3xl shadow-xl shadow-gray-200/50 border border-gray-100 w-full max-w-[1000px] flex flex-col md:flex-row overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[1000px] flex flex-col md:flex-row overflow-hidden relative my-auto animate-in fade-in zoom-in-95 duration-300">
         
+        {/* Nút Đóng Modal */}
+        <button type="button" onClick={() => closeAuthModal ? closeAuthModal() : navigate('/')} className="absolute top-4 right-4 z-10 p-2 bg-black/5 hover:bg-black/10 rounded-full transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 text-gray-700"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+
         {/* Cột Trái (Ảnh) */}
         <div className="hidden md:flex md:w-5/12 bg-[#eef8ef] items-center justify-center p-10">
           <img src={IMAGES.LOGO_DK} alt="Pharmacy" className="w-full h-auto object-contain hover:scale-105 transition-transform duration-500" />
@@ -300,12 +315,12 @@ const Register = () => {
 
             <div className="pt-6 border-t border-gray-100 text-center">
               <span className="text-[14px] text-gray-600">Đã có tài khoản? </span>
-              <span onClick={() => navigate('/login')} className="text-[#2D982A] text-[15px] font-bold hover:underline cursor-pointer">Đăng nhập ngay</span>
+              <span onClick={() => openAuthModal ? openAuthModal('login') : navigate('/login')} className="text-[#2D982A] text-[15px] font-bold hover:underline cursor-pointer">Đăng nhập ngay</span>
             </div>
           </form>
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 
