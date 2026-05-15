@@ -9,18 +9,20 @@ const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-const mockComments = [
-  {
-    id: 'Cus01', name: 'Cus01',
-    content: 'Sản phẩm giao nhanh, đóng gói cẩn thận. Tôi đã sử dụng được 1 tuần và thấy rất hiệu quả.',
-    reply: { author: 'Nhà thuốc Thái Dương', content: 'Cảm ơn bạn đã tin tưởng và sử dụng dịch vụ của Nhà thuốc Thái Dương. Chúc bạn nhiều sức khỏe!' }
-  },
-  {
-    id: 'Cus02', name: 'Cus02',
-    content: 'Cho mình hỏi thuốc này có dùng được cho phụ nữ có thai không shop?',
-    reply: { author: 'Nhà thuốc Thái Dương', content: 'Chào bạn, đối với phụ nữ có thai cần tham khảo ý kiến bác sĩ chuyên khoa trước khi sử dụng sản phẩm này nhé.' }
-  }
-];
+// Thêm SVG cho ngôi sao
+const StarIcon = ({ filled, onClick, className = "w-5 h-5 cursor-pointer transition-colors" }) => (
+  <svg 
+    onClick={onClick}
+    xmlns="http://www.w3.org/2000/svg" 
+    viewBox="0 0 24 24" 
+    fill={filled ? "#f59e0b" : "none"} 
+    stroke={filled ? "#f59e0b" : "currentColor"} 
+    strokeWidth={1.5}
+    className={className}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
+  </svg>
+);
 
 // --- COMPONENT THẺ SẢN PHẨM KHÁC ---
 const ProductCard = ({ item }) => {
@@ -52,7 +54,7 @@ const ProductCard = ({ item }) => {
 const ProductDetail = () => {
   const { slug } = useParams(); 
   const navigate = useNavigate();
-  const { fetchCart, openAuthModal } = useCart();
+  const { fetchCart, openAuthModal, user } = useCart();
 
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
@@ -60,6 +62,15 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // --- REVIEW STATE ---
+  const [reviews, setReviews] = useState([]);
+  const [reviewPageNo, setReviewPageNo] = useState(0);
+  const [reviewTotalPages, setReviewTotalPages] = useState(1);
+  const [reviewTotalElements, setReviewTotalElements] = useState(0);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
   useEffect(() => {
     if (!slug) {
@@ -95,6 +106,12 @@ const ProductDetail = () => {
           } catch (relError) {
              console.error("Không lấy được sp liên quan", relError);
           }
+
+          // Lấy reviews ban đầu
+          if (productData && productData.id) {
+             fetchReviews(productData.id, 0);
+          }
+
         }
       } catch (error) {
         console.error("Lỗi tải chi tiết:", error);
@@ -113,6 +130,64 @@ const ProductDetail = () => {
       setQuantity(prev => prev > 1 ? prev - 1 : 1);
     } else {
       setQuantity(prev => prev < product.totalStockQuantity ? prev + 1 : product.totalStockQuantity);
+    }
+  };
+
+  const fetchReviews = async (productId, page = 0) => {
+    try {
+      const res = await api.get(`/products/${productId}/reviews?pageNo=${page}&pageSize=5`);
+      if (res.data.status === 200) {
+        const data = res.data.data;
+        if (page === 0) {
+          setReviews(data.content);
+        } else {
+          setReviews(prev => [...prev, ...data.content]);
+        }
+        setReviewPageNo(data.pageNo);
+        setReviewTotalPages(data.totalPages);
+        setReviewTotalElements(data.totalElements);
+      }
+    } catch (error) {
+      console.error("Lỗi khi tải đánh giá:", error);
+    }
+  };
+
+  const handleLoadMoreReviews = () => {
+    if (reviewPageNo + 1 < reviewTotalPages && product) {
+      fetchReviews(product.id, reviewPageNo + 1);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Vui lòng đăng nhập để đánh giá sản phẩm!');
+      openAuthModal('login');
+      return;
+    }
+    if (!newReviewComment.trim()) {
+      toast.error('Vui lòng nhập nội dung đánh giá!');
+      return;
+    }
+    setIsSubmittingReview(true);
+    try {
+      const res = await api.post('/reviews', {
+        productId: product.id,
+        rating: newReviewRating,
+        comment: newReviewComment.trim()
+      });
+      if (res.data.status === 201 || res.status === 201) {
+        toast.success('Đã gửi đánh giá thành công!');
+        setNewReviewComment('');
+        setNewReviewRating(5);
+        // Tải lại reviews
+        fetchReviews(product.id, 0);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Lỗi khi gửi đánh giá!');
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
@@ -300,48 +375,102 @@ const ProductDetail = () => {
             </div>
         </div>
 
-        {/* BÌNH LUẬN */}
+        {/* BÌNH LUẬN VÀ ĐÁNH GIÁ */}
         <div className="mb-16 w-full max-w-[950px]">
             <div className="bg-white border border-gray-200 rounded-2xl p-8">
-                <h2 className="text-[26px] font-black text-black uppercase tracking-wide mb-8">BÌNH LUẬN</h2>
-                <form className="flex flex-col mb-12">
-                    <div className="flex flex-wrap items-center gap-6 mb-4">
-                        <div className="flex items-center space-x-6">
-                            <label className="flex items-center cursor-pointer text-[15px] font-medium text-black">
-                                <input type="radio" name="gender" value="anh" className="w-[18px] h-[18px] accent-[#2D982A] mr-2 cursor-pointer" />
-                                Anh
-                            </label>
-                            <label className="flex items-center cursor-pointer text-[15px] font-medium text-black">
-                                <input type="radio" name="gender" value="chi" className="w-[18px] h-[18px] accent-[#2D982A] mr-2 cursor-pointer" defaultChecked />
-                                Chị
-                            </label>
-                        </div>
-                        <div className="relative">
-                            <input type="text" placeholder="Họ và tên" className="border border-gray-400 rounded p-2.5 text-[14px] w-[260px] outline-none focus:border-[#2D982A] placeholder-gray-500" />
-                            <span className="absolute left-[65px] top-1/2 -translate-y-1/2 text-red-500">*</span>
-                        </div>
-                        <input type="text" placeholder="Số điện thoại" className="border border-gray-400 rounded p-2.5 text-[14px] w-[260px] outline-none focus:border-[#2D982A] placeholder-gray-500" />
-                    </div>
-                    <textarea placeholder="Nhập bình luận..." className="w-full border border-gray-400 rounded-lg p-4 text-[15px] min-h-[140px] outline-none focus:border-[#2D982A] resize-y text-gray-800 placeholder-gray-500"></textarea>
-                    <div className="flex justify-end mt-5">
-                        <button type="button" onClick={() => toast.success("Đã gửi bình luận!")} className="bg-[#2D982A] text-white font-bold text-[15px] px-8 py-2.5 rounded-lg hover:bg-green-700 transition-colors shadow-sm">Gửi bình luận</button>
-                    </div>
-                </form>
-
-                <div className="space-y-4">
-                    {mockComments.map(comment => (
-                        <div key={comment.id} className="border border-gray-200 rounded-xl p-6">
-                            <h4 className="text-[17px] font-bold text-gray-900 mb-3">{comment.name}</h4>
-                            <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line mb-4">{comment.content}</p>
-                            {comment.reply && (
-                                <div className="border border-[#2D982A] rounded-lg p-5 bg-white">
-                                    <h5 className="text-[16px] font-bold text-[#2D982A] mb-2">{comment.reply.author}</h5>
-                                    <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line">{comment.reply.content}</p>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+                <div className="flex items-center justify-between mb-8">
+                  <h2 className="text-[26px] font-black text-black uppercase tracking-wide">ĐÁNH GIÁ SẢN PHẨM</h2>
+                  <span className="text-gray-500 font-medium">{reviewTotalElements} đánh giá</span>
                 </div>
+                
+                {user?.role?.toUpperCase() !== 'ADMIN' && (
+                  <form onSubmit={handleSubmitReview} className="flex flex-col mb-12 bg-gray-50 p-6 rounded-xl border border-gray-100">
+                      <h3 className="text-lg font-bold text-gray-800 mb-4">Gửi đánh giá của bạn</h3>
+                      <div className="flex items-center gap-3 mb-4">
+                          <span className="text-[15px] font-medium text-gray-700">Chất lượng:</span>
+                          <div className="flex gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <StarIcon 
+                                key={star} 
+                                filled={star <= newReviewRating} 
+                                onClick={() => setNewReviewRating(star)} 
+                                className="w-6 h-6 cursor-pointer hover:scale-110 transition-transform" 
+                              />
+                            ))}
+                          </div>
+                      </div>
+                      
+                      <textarea 
+                        value={newReviewComment}
+                        onChange={(e) => setNewReviewComment(e.target.value)}
+                        placeholder="Nhập trải nghiệm của bạn về sản phẩm này..." 
+                        className="w-full border border-gray-300 rounded-lg p-4 text-[15px] min-h-[120px] outline-none focus:border-[#2D982A] focus:ring-1 focus:ring-[#2D982A] resize-y text-gray-800 placeholder-gray-400"
+                      ></textarea>
+                      
+                      <div className="flex justify-end mt-4">
+                          <button 
+                            type="submit" 
+                            disabled={isSubmittingReview}
+                            className="bg-[#2D982A] text-white font-bold text-[15px] px-8 py-2.5 rounded-lg hover:bg-green-700 transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                          >
+                            {isSubmittingReview ? "Đang gửi..." : "Gửi đánh giá"}
+                          </button>
+                      </div>
+                  </form>
+                )}
+
+                <div className="space-y-6">
+                    {reviews.length === 0 ? (
+                      <div className="text-center py-10 text-gray-500">
+                        Chưa có đánh giá nào cho sản phẩm này. Trở thành người đầu tiên đánh giá!
+                      </div>
+                    ) : (
+                      reviews.map(review => (
+                          <div key={review.id} className="border-b border-gray-100 last:border-0 pb-6 mb-2">
+                              <div className="flex justify-between items-start mb-3">
+                                <div>
+                                  <h4 className="text-[16px] font-bold text-gray-900 flex items-center gap-2">
+                                    {review.userFullName}
+                                    <span className="text-[12px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Đã mua hàng</span>
+                                  </h4>
+                                  <div className="flex gap-0.5 mt-1">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                      <StarIcon key={star} filled={star <= review.rating} className="w-4 h-4" />
+                                    ))}
+                                  </div>
+                                </div>
+                                <span className="text-[13px] text-gray-400">
+                                  {new Date(review.createdAt).toLocaleDateString('vi-VN')}
+                                </span>
+                              </div>
+                              
+                              <p className="text-[15px] text-gray-700 leading-relaxed whitespace-pre-line mb-4">
+                                {review.comment}
+                              </p>
+                              
+                              {review.adminReply && (
+                                  <div className="border-l-4 border-[#2D982A] pl-4 py-1 ml-4 mt-2">
+                                      <h5 className="text-[14px] font-bold text-[#2D982A] mb-1">Phản hồi từ Nhà thuốc:</h5>
+                                      <p className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-line bg-gray-50 p-3 rounded-lg">
+                                        {review.adminReply}
+                                      </p>
+                                  </div>
+                              )}
+                          </div>
+                      ))
+                    )}
+                </div>
+                
+                {reviewPageNo + 1 < reviewTotalPages && (
+                  <div className="flex justify-center mt-8">
+                    <button 
+                      onClick={handleLoadMoreReviews}
+                      className="px-6 py-2 border border-[#2D982A] text-[#2D982A] font-medium text-[14px] rounded-full hover:bg-green-50 transition-colors"
+                    >
+                      Xem thêm đánh giá
+                    </button>
+                  </div>
+                )}
             </div>
         </div>
 

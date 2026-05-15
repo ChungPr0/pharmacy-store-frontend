@@ -1,8 +1,11 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 
 const Orders = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   
   // Pagination & Filtering
@@ -89,6 +92,17 @@ const Orders = () => {
     fetchOrders();
   }, [pageNo, pageSize, sortBy, sortDir, status]);
 
+  // Handle openOrderId from query params
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openOrderId = params.get("openOrderId");
+    if (openOrderId) {
+      handleViewDetail(openOrderId);
+      params.delete("openOrderId");
+      navigate({ search: params.toString() }, { replace: true });
+    }
+  }, [location, navigate]);
+
   // --- HANDLERS ---
   const handleSearch = (e) => {
     e.preventDefault();
@@ -132,6 +146,7 @@ const Orders = () => {
       // Cập nhật lại UI detail và list
       handleViewDetail(orderDetail.id);
       fetchOrders();
+      window.dispatchEvent(new Event('reloadNotifications'));
     } catch (err) {
       toast.error(err.response?.data?.message || "Cập nhật trạng thái thất bại");
     }
