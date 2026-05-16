@@ -36,7 +36,7 @@ const AdminLayout = () => {
   useEffect(() => {
     fetchNotifications();
     const intervalId = setInterval(fetchNotifications, 60000); // Tự động làm mới mỗi 1 phút
-    
+
     const handleReload = () => fetchNotifications();
     window.addEventListener('reloadNotifications', handleReload);
 
@@ -61,7 +61,7 @@ const AdminLayout = () => {
           <div className="flex items-center gap-4">
             {/* BELL NOTIFICATION */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-[#2D982A] bg-gray-50 border border-gray-200 hover:border-[#2D982A] transition-all duration-300 rounded-full shadow-sm relative group"
               >
@@ -89,7 +89,7 @@ const AdminLayout = () => {
                     ) : (
                       <>
                         {notifications.recentUnconfirmedOrders?.map((order) => (
-                          <li 
+                          <li
                             key={`order-${order.id}`}
                             onClick={() => {
                               navigate(`/admin/orders?openOrderId=${order.id}`);
@@ -107,7 +107,7 @@ const AdminLayout = () => {
                           </li>
                         ))}
                         {notifications.recentUnrepliedReviews?.map((review) => (
-                          <li 
+                          <li
                             key={`review-${review.id}`}
                             onClick={() => {
                               navigate(`/admin/products?openReviewProductId=${review.productId}&openReviewProductName=${encodeURIComponent(review.productName)}`);

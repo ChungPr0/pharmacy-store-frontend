@@ -7,8 +7,8 @@ const formatVND = (price) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 };
 
-const ProductCard = ({ 
-  product, 
+const ProductCard = ({
+  product,
   item,
   showAddToCart = true,
   onAddToCart,
@@ -18,12 +18,12 @@ const ProductCard = ({
   const { openAuthModal } = useCart();
   // Support both 'product' and 'item' prop names for flexibility
   const productData = product || item;
-  
+
   if (!productData) return null;
 
   const handleAddToCart = async (e) => {
     e.stopPropagation();
-    
+
     const token = localStorage.getItem('token');
     if (!token) {
       toast.error('Vui lòng đăng nhập để thêm vào giỏ hàng!');
@@ -38,9 +38,9 @@ const ProductCard = ({
 
     const loadToast = toast.loading('Đang thêm vào giỏ...');
     try {
-      const res = await api.post('/cart/items', { 
-        productId: productData.id, 
-        quantity: 1 
+      const res = await api.post('/cart/items', {
+        productId: productData.id,
+        quantity: 1
       });
       if (res.data.status === 200 || res.status === 200) {
         toast.success('Đã thêm sản phẩm vào giỏ hàng', { id: loadToast });
@@ -59,19 +59,19 @@ const ProductCard = ({
   };
 
   return (
-    <div 
+    <div
       onClick={handleCardClick}
       className={`bg-[#f5f5f5] rounded-xl border border-gray-300 hover:border-[#2D982A] transition-all duration-300 group/card flex flex-col overflow-hidden shadow-sm hover:shadow-lg cursor-pointer w-full h-full ${className}`}
     >
       {/* Image Container */}
       <div className="bg-white m-2 rounded-lg h-[240px] md:h-[260px] flex items-center justify-center p-4 relative shadow-xs hover:shadow-sm transition-shadow">
-        <img 
+        <img
           src={productData.imageUrl}
           alt={productData.name}
-          className="max-h-full max-w-full object-contain group-hover/card:scale-110 transition-transform duration-300" 
-          onError={(e) => { 
-            e.target.onerror = null; 
-            e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png"; 
+          className="max-h-full max-w-full object-contain group-hover/card:scale-110 transition-transform duration-300"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = "https://nhathuoclongchau.com.vn/estore-images/front-end/no-image.png";
           }}
         />
       </div>
@@ -87,7 +87,7 @@ const ProductCard = ({
         {productData.tags && productData.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {productData.tags.slice(0, 2).map((tag, idx) => (
-              <span 
+              <span
                 key={idx}
                 className="bg-[#f0f8ff] text-[#0068ff] text-[10px] md:text-[11px] font-medium px-2 py-1 rounded whitespace-nowrap"
               >
@@ -104,7 +104,7 @@ const ProductCard = ({
 
         {/* Action Button */}
         {showAddToCart ? (
-          <button 
+          <button
             onClick={handleAddToCart}
             className="mt-auto w-full py-2 md:py-2.5 border border-gray-300 rounded-lg font-bold text-[12px] md:text-[13px] text-gray-700 bg-white hover:bg-[#2D982A] hover:text-white hover:border-[#2D982A] transition-colors duration-300 uppercase tracking-wide shadow-xs"
           >

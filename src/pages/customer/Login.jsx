@@ -50,6 +50,7 @@ const Login = () => {
         const token = res.data.data.token;
         const refreshTokenValue = res.data.data.refreshToken;
         const userData = {
+          id: res.data.data.id,
           phone: res.data.data.phone,
           fullName: res.data.data.fullName,
           role: res.data.data.role,

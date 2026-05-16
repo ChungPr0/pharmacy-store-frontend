@@ -826,7 +826,7 @@ const Profile = () => {
                 </form>
               </div>
             ) : activeSidebarTab === 'ORDERS' && !isAdmin ? (
-               <OrdersContent orders={orders} profileData={{fullName, email, gender, birthday: dob, phone, avatarUrl}} onNavigate={navigate} />
+               <OrdersContent orders={orders} profileData={{fullName, email, gender, birthday: dob, phone, avatarUrl}} onNavigate={navigate} onOrderCancelled={(orderCode) => setOrders(prev => prev.map(o => o.orderCode === orderCode ? {...o, status: 'CANCELLED'} : o))} />
             ) : null}
           </div>
         </div>
