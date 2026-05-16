@@ -36,7 +36,7 @@ const Products = () => {
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
-  const [images, setImages] = useState([""]); // Start with 1 empty image input
+  const [images, setImages] = useState([]); // URLs of uploaded images
   const [attributes, setAttributes] = useState([]);
 
   // --- FETCHING DATA ---
@@ -116,7 +116,7 @@ const Products = () => {
     setPrice("");
     setDescription("");
     setIsActive(true);
-    setImages([""]);
+    setImages([]);
     setAttributes([]);
     setShowForm(true);
   };
@@ -138,7 +138,7 @@ const Products = () => {
         if (data.images && data.images.length > 0) {
           setImages(data.images);
         } else {
-          setImages([""]);
+          setImages([]);
         }
 
         // Handle attributes
@@ -283,15 +283,60 @@ const Products = () => {
   );
 
   // --- DYNAMIC FIELDS HELPERS ---
-  const handleImageChange = (index, value) => {
-    const newImages = [...images];
-    newImages[index] = value;
-    setImages(newImages);
+  const [uploadingImages, setUploadingImages] = useState(false);
+
+  const handleImageUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    
+    const fileArray = Array.from(files);
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    
+    // Validate all files
+    for (const file of fileArray) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`File "${file.name}" không phải ảnh hợp lệ (JPEG, PNG, WEBP, GIF).`);
+        return;
+      }
+      if (file.size > maxSize) {
+        toast.error(`File "${file.name}" vượt quá 5MB.`);
+        return;
+      }
+    }
+
+    setUploadingImages(true);
+    const loadToast = toast.loading(`Đang tải ${fileArray.length} ảnh lên...`);
+
+    try {
+      const uploadedUrls = [];
+      for (const file of fileArray) {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await api.post('/admin/products/upload-image', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (res.data?.status === 200 && res.data?.data?.imageUrl) {
+          uploadedUrls.push(res.data.data.imageUrl);
+        }
+      }
+      
+      // Append to existing images (remove empty strings first)
+      setImages(prev => {
+        const cleaned = prev.filter(url => url.trim() !== '');
+        return [...cleaned, ...uploadedUrls];
+      });
+      
+      toast.success(`Đã tải lên ${uploadedUrls.length} ảnh thành công!`, { id: loadToast });
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Lỗi khi tải ảnh lên!', { id: loadToast });
+    } finally {
+      setUploadingImages(false);
+    }
   };
-  const addImageField = () => setImages([...images, ""]);
+
   const removeImageField = (index) => {
     const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages.length ? newImages : [""]);
+    setImages(newImages);
   };
 
   const handleAttributeChange = (index, field, value) => {
@@ -406,8 +451,21 @@ const Products = () => {
                 products.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-slate-800">{item.name}</div>
-                      <div className="text-xs font-medium text-slate-500 mt-0.5">Mã: {item.slug}</div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-11 h-11 bg-slate-50 rounded-xl flex items-center justify-center overflow-hidden border border-slate-100 flex-shrink-0">
+                          {item.imageUrl ? (
+                            <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-800 truncate max-w-[280px]" title={item.name}>{item.name}</div>
+                          <div className="text-xs font-medium text-slate-500 mt-0.5">{item.slug}</div>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 font-medium text-slate-600">{item.categoryName || '-'}</td>
                     <td className="px-6 py-4 text-right font-bold text-emerald-600">{formatCurrency(item.price)}</td>
@@ -621,38 +679,77 @@ const Products = () => {
                   {/* Images Section */}
                   <div>
                     <div className="flex justify-between items-center border-b pb-2 mb-4">
-                       <h4 className="font-semibold text-gray-700">Hình ảnh sản phẩm (URLs)</h4>
-                       <button
-                         type="button"
-                         onClick={addImageField}
-                         className="text-xs bg-blue-50 text-blue-600 px-2.5 py-1.5 rounded-md hover:bg-blue-100 font-medium transition"
-                       >
-                         + Thêm ảnh
-                       </button>
+                       <h4 className="font-semibold text-gray-700">Hình ảnh sản phẩm</h4>
+                       <span className="text-xs text-gray-400 font-medium">{images.filter(u => u.trim()).length} ảnh</span>
                     </div>
-                    <div className="space-y-3">
-                      {images.map((img, index) => (
-                        <div key={index} className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="https://..."
-                            value={img}
-                            onChange={(e) => handleImageChange(index, e.target.value)}
-                            className="flex-1 border border-gray-300 px-3 py-2 rounded-md focus:ring-2 focus:ring-blue-500 text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeImageField(index)}
-                            className="bg-red-50 text-red-600 px-3 rounded-md hover:bg-red-100 transition"
-                            title="Xóa ảnh này"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                            </svg>
-                          </button>
+
+                    {/* Upload Zone */}
+                    <div
+                      className={`relative border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer group
+                        ${uploadingImages ? 'border-blue-300 bg-blue-50/50' : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50/30'}`}
+                      onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                      onDrop={(e) => { e.preventDefault(); e.stopPropagation(); handleImageUpload(e.dataTransfer.files); }}
+                      onClick={() => !uploadingImages && document.getElementById('product-image-input').click()}
+                    >
+                      <input
+                        id="product-image-input"
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => { handleImageUpload(e.target.files); e.target.value = null; }}
+                        disabled={uploadingImages}
+                      />
+                      {uploadingImages ? (
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="w-8 h-8 border-3 border-blue-300 border-t-blue-600 rounded-full animate-spin"></div>
+                          <p className="text-sm font-medium text-blue-600">Đang tải ảnh lên...</p>
                         </div>
-                      ))}
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-gray-300 group-hover:text-blue-400 transition-colors">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21zM12 9.75a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
+                          </svg>
+                          <p className="text-sm font-medium text-gray-500">
+                            <span className="text-blue-600 font-semibold">Nhấn để chọn ảnh</span> hoặc kéo thả vào đây
+                          </p>
+                          <p className="text-xs text-gray-400">JPEG, PNG, WEBP, GIF • Tối đa 5MB/ảnh</p>
+                        </div>
+                      )}
                     </div>
+
+                    {/* Image Preview Grid */}
+                    {images.filter(u => u.trim()).length > 0 && (
+                      <div className="grid grid-cols-3 gap-3 mt-4">
+                        {images.filter(u => u.trim()).map((url, index) => (
+                          <div key={index} className="relative group/img rounded-lg overflow-hidden border border-gray-200 bg-gray-50 aspect-square">
+                            <img
+                              src={url}
+                              alt={`Ảnh ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
+                            {/* Overlay with delete button */}
+                            <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/40 transition-all flex items-center justify-center">
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); removeImageField(images.indexOf(url)); }}
+                                className="opacity-0 group-hover/img:opacity-100 transition-all bg-white/90 hover:bg-red-500 hover:text-white text-red-500 rounded-full p-2 shadow-lg transform scale-75 group-hover/img:scale-100"
+                                title="Xóa ảnh này"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                              </button>
+                            </div>
+                            {/* Badge for first image */}
+                            {index === 0 && (
+                              <span className="absolute top-1.5 left-1.5 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow">Ảnh chính</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* Attributes Section */}

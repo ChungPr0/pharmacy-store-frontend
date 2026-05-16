@@ -1,23 +1,41 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
+import { useCart } from "../../contexts/CartContext";
 
 const Users = () => {
+  const { user: currentUser } = useCart();
   const [customers, setCustomers] = useState([]);
-  
+  const [currentAdminPhone, setCurrentAdminPhone] = useState(null);
+
   // Pagination & Filtering
   const [pageNo, setPageNo] = useState(0);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
-  
+
   const [keyword, setKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+
+  // Fetch thông tin profile admin đang đăng nhập để lấy phone (dùng cho self-check)
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      try {
+        const res = await api.get("/profile");
+        if (res.data?.status === 200 && res.data?.data?.phone) {
+          setCurrentAdminPhone(res.data.data.phone);
+        }
+      } catch (err) {
+        console.error("Lỗi lấy profile admin:", err);
+      }
+    };
+    fetchAdminProfile();
+  }, []);
 
   // Modal State
   const [showForm, setShowForm] = useState(false);
   const [isEditLoading, setIsEditLoading] = useState(false);
-  
+
   // Form Fields
   const [editId, setEditId] = useState(null);
   const [fullName, setFullName] = useState("");
@@ -29,7 +47,7 @@ const Users = () => {
   // Bắt mọi trường hợp backend có thể trả về: boolean, số, chuỗi hoa/thường
   const checkIsActive = (customer) => {
     if (!customer) return false;
-    
+
     // Nếu truyền vào chuỗi/số/boolean trực tiếp (trường hợp fallback)
     if (typeof customer !== 'object') {
       const val = customer;
@@ -117,11 +135,21 @@ const Users = () => {
     setTimeout(() => fetchCustomers(), 0);
   };
 
+  const isSelf = (customer) => {
+    if (!currentAdminPhone) return false;
+    return customer.phone === currentAdminPhone;
+  };
+
   const handleOpenEdit = async (id) => {
+    const targetUser = customers.find(c => c.id === id);
+    if (targetUser && isSelf(targetUser)) {
+      toast.error("Bạn không thể chỉnh sửa tài khoản của chính mình tại đây!");
+      return;
+    }
     setEditId(id);
     setIsEditLoading(true);
     setShowForm(true);
-    
+
     try {
       const res = await api.get(`/admin/customers/${id}`);
       const data = res.data?.data;
@@ -156,27 +184,66 @@ const Users = () => {
       toast.error(err.response?.data?.message || "Cập nhật thất bại");
     }
   };
+  // --- CONFIRM MODAL STATE ---
+  const [confirmModal, setConfirmModal] = useState(null); // { type: 'status'|'role', customer, ... }
 
-  const handleToggleStatus = async (customer) => {
+  const handleToggleStatus = (customer) => {
+    if (isSelf(customer)) {
+      toast.error("Bạn không thể tự khóa tài khoản của chính mình!");
+      return;
+    }
     const isActive = checkIsActive(customer);
-    // Nếu đang active thì gửi status báo khóa, ngược lại gửi active
-    // Lưu ý: Cần điều chỉnh string "BANNED"/"ACTIVE" theo đúng chuẩn backend của bạn yêu cầu
-    const payloadStatus = isActive ? "BANNED" : "ACTIVE"; 
-    
-    const confirmMsg = isActive 
-      ? `Bạn có chắc chắn muốn KHÓA tài khoản của ${customer.fullName}?` 
-      : `Bạn muốn MỞ KHÓA tài khoản cho ${customer.fullName}?`;
-      
-    if (!window.confirm(confirmMsg)) return;
+    setConfirmModal({
+      type: 'status',
+      customer,
+      title: isActive ? 'Khóa tài khoản' : 'Mở khóa tài khoản',
+      message: isActive
+        ? `Bạn có chắc chắn muốn KHÓA tài khoản của "${customer.fullName}"?`
+        : `Bạn muốn MỞ KHÓA tài khoản cho "${customer.fullName}"?`,
+      confirmText: isActive ? 'Xác nhận khóa' : 'Mở khóa',
+      confirmColor: isActive ? 'bg-red-600 hover:bg-red-700' : 'bg-emerald-600 hover:bg-emerald-700',
+    });
+  };
+
+  const handleToggleRole = (customer) => {
+    if (isSelf(customer)) {
+      toast.error("Bạn không thể tự thay đổi quyền hạn của chính mình!");
+      return;
+    }
+    const currentRole = customer.role || 'CUSTOMER';
+    const newRole = currentRole === 'ADMIN' ? 'CUSTOMER' : 'ADMIN';
+    setConfirmModal({
+      type: 'role',
+      customer,
+      newRole,
+      title: newRole === 'ADMIN' ? 'Cấp quyền Admin' : 'Hạ quyền về Khách hàng',
+      message: newRole === 'ADMIN'
+        ? `Bạn có chắc chắn muốn CẤP QUYỀN ADMIN cho "${customer.fullName}"?\n\nNgười dùng này sẽ có toàn quyền quản trị hệ thống.`
+        : `Bạn có chắc chắn muốn HẠ QUYỀN "${customer.fullName}" về KHÁCH HÀNG?\n\nNgười dùng này sẽ mất quyền quản trị.`,
+      confirmText: newRole === 'ADMIN' ? 'Cấp quyền Admin' : 'Hạ quyền',
+      confirmColor: newRole === 'ADMIN' ? 'bg-amber-600 hover:bg-amber-700' : 'bg-blue-600 hover:bg-blue-700',
+    });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmModal) return;
+    const { type, customer, newRole } = confirmModal;
 
     try {
-      await api.patch(`/admin/customers/${customer.id}/status`, {
-        status: payloadStatus
-      });
-      toast.success(`Đã ${isActive ? "khóa" : "mở khóa"} tài khoản thành công!`);
+      if (type === 'status') {
+        const isActive = checkIsActive(customer);
+        const payloadStatus = isActive ? "BANNED" : "ACTIVE";
+        await api.patch(`/admin/customers/${customer.id}/status`, { status: payloadStatus });
+        toast.success(`Đã ${isActive ? "khóa" : "mở khóa"} tài khoản thành công!`);
+      } else if (type === 'role') {
+        await api.patch(`/admin/customers/${customer.id}/role`, { role: newRole });
+        toast.success(`Đã ${newRole === 'ADMIN' ? 'cấp quyền Admin' : 'hạ về Khách hàng'} thành công!`);
+      }
       fetchCustomers();
     } catch (err) {
-      toast.error(err.response?.data?.message || "Lỗi đổi trạng thái");
+      toast.error(err.response?.data?.message || "Thao tác thất bại");
+    } finally {
+      setConfirmModal(null);
     }
   };
 
@@ -212,7 +279,7 @@ const Users = () => {
               />
             </div>
           </div>
-          
+
           <div className="w-full md:w-[220px]">
             <label className="block text-sm font-semibold mb-2 text-slate-700">Trạng thái</label>
             <select
@@ -255,6 +322,7 @@ const Users = () => {
               <tr>
                 <th className="px-6 py-4">Khách hàng</th>
                 <th className="px-6 py-4">Liên hệ</th>
+                <th className="px-6 py-4 text-center">Vai trò</th>
                 <th className="px-6 py-4 text-center">Trạng thái</th>
                 <th className="px-6 py-4">Ngày tham gia</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
@@ -263,7 +331,7 @@ const Users = () => {
             <tbody className="divide-y divide-slate-100">
               {customers.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
                       <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -275,7 +343,7 @@ const Users = () => {
               ) : (
                 customers.map((item) => {
                   const isActive = checkIsActive(item);
-                  
+
                   return (
                     <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="px-6 py-4">
@@ -294,11 +362,23 @@ const Users = () => {
                         <div className="text-slate-500 text-xs">{item.email || 'Chưa cập nhật email'}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                          isActive 
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/60" 
+                        {(item.role || 'CUSTOMER') === 'ADMIN' ? (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-amber-50 text-amber-700 border-amber-200/60">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                            Admin
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border bg-blue-50 text-blue-700 border-blue-200/60">
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                            Khách hàng
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${isActive
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
                             : "bg-red-50 text-red-700 border-red-200/60"
-                        }`}>
+                          }`}>
                           <span className={`w-2 h-2 rounded-full animate-pulse ${isActive ? "bg-emerald-500" : "bg-red-500"}`}></span>
                           {isActive ? "Hoạt động" : "Bị khóa"}
                         </span>
@@ -307,43 +387,69 @@ const Users = () => {
                         {formatDate(item.registrationDate)}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => handleOpenEdit(item.id)}
-                            className="inline-flex items-center justify-center w-8 h-8 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors border border-transparent hover:border-emerald-200"
-                            title="Chi tiết / Chỉnh sửa"
-                          >
-                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                            </svg>
-                          </button>
-                          
-                          {/* Nút Khóa / Mở Khóa rõ ràng hơn */}
-                          <button
-                            onClick={() => handleToggleStatus(item)}
-                            className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
-                              isActive
-                                ? "text-red-600 hover:bg-red-50 border-transparent hover:border-red-200"
-                                : "text-emerald-600 hover:bg-emerald-50 border-transparent hover:border-emerald-200"
-                            }`}
-                          >
-                            {isActive ? (
-                               <>
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        {isSelf(item) ? (
+                          <div className="flex justify-end">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-500 border border-slate-200 cursor-default shadow-sm">
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                              </svg>
+                              Tài khoản của bạn
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end items-center gap-2">
+                            {/* Nút Chỉnh sửa */}
+                            <button
+                              onClick={() => handleOpenEdit(item.id)}
+                              className="group flex items-center justify-center w-9 h-9 rounded-xl bg-white text-emerald-600 border border-emerald-100 shadow-sm hover:bg-emerald-600 hover:text-white hover:border-emerald-600 transition-all duration-200"
+                              title="Chỉnh sửa thông tin"
+                            >
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                              </svg>
+                            </button>
+
+                            {/* Nút Khóa / Mở Khóa */}
+                            <button
+                              onClick={() => handleToggleStatus(item)}
+                              className={`group flex items-center justify-center w-9 h-9 rounded-xl shadow-sm transition-all duration-200 border ${isActive
+                                  ? "bg-white text-red-500 border-red-100 hover:bg-red-600 hover:text-white hover:border-red-600"
+                                  : "bg-white text-emerald-500 border-emerald-100 hover:bg-emerald-600 hover:text-white hover:border-emerald-600"
+                                }`}
+                              title={isActive ? "Khóa tài khoản" : "Mở khóa tài khoản"}
+                            >
+                              {isActive ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                                 </svg>
-                                <span>Khóa</span>
-                               </>
-                            ) : (
-                               <>
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                              ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5V6.75a4.5 4.5 0 119 0v3.75M3.75 21.75h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                                 </svg>
-                                <span>Mở khóa</span>
-                               </>
-                            )}
-                          </button>
-                        </div>
+                              )}
+                            </button>
+
+                            {/* Nút Cấp / Hạ quyền */}
+                            <button
+                              onClick={() => handleToggleRole(item)}
+                              className={`group flex items-center justify-center w-9 h-9 rounded-xl shadow-sm transition-all duration-200 border ${(item.role || 'CUSTOMER') === 'ADMIN'
+                                  ? "bg-white text-blue-500 border-blue-100 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+                                  : "bg-white text-amber-500 border-amber-100 hover:bg-amber-600 hover:text-white hover:border-amber-600"
+                                }`}
+                              title={(item.role || 'CUSTOMER') === 'ADMIN' ? 'Hạ xuống Khách hàng' : 'Cấp quyền Admin'}
+                            >
+                              {(item.role || 'CUSTOMER') === 'ADMIN' ? (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 13.5L12 21m0 0l-7.5-7.5M12 21V3" />
+                                </svg>
+                              ) : (
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   );
@@ -356,10 +462,10 @@ const Users = () => {
         {/* PAGINATION */}
         {totalPages > 1 && (
           <div className="mt-auto flex items-center justify-between px-6 py-4 border-t border-slate-200 bg-slate-50">
-             <div className="text-sm font-medium text-slate-500">
-                Trang <span className="text-slate-800 font-bold">{pageNo + 1}</span> / {totalPages}
-             </div>
-             <div className="flex gap-2">
+            <div className="text-sm font-medium text-slate-500">
+              Trang <span className="text-slate-800 font-bold">{pageNo + 1}</span> / {totalPages}
+            </div>
+            <div className="flex gap-2">
               <button
                 disabled={pageNo === 0}
                 onClick={() => setPageNo((p) => Math.max(0, p - 1))}
@@ -375,11 +481,10 @@ const Users = () => {
                   <button
                     key={p}
                     onClick={() => setPageNo(p)}
-                    className={`w-9 h-9 flex items-center justify-center border rounded-xl text-sm font-bold transition-all ${
-                      pageNo === p
+                    className={`w-9 h-9 flex items-center justify-center border rounded-xl text-sm font-bold transition-all ${pageNo === p
                         ? "bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200"
                         : "border-slate-200 text-slate-600 hover:bg-white hover:shadow-sm"
-                    }`}
+                      }`}
                   >
                     {p + 1}
                   </button>
@@ -402,22 +507,22 @@ const Users = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
           {/* Backdrop */}
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowForm(false)}></div>
-          
+
           {/* Modal Content */}
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative flex flex-col max-h-[90vh] transform transition-all">
-            
+
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
-               <h3 className="text-xl font-bold text-slate-800">
-                 Hồ sơ khách hàng
-               </h3>
-               <button
-                  onClick={() => setShowForm(false)}
-                  className="text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 rounded-full p-2 transition-colors"
-               >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-               </button>
+              <h3 className="text-xl font-bold text-slate-800">
+                Hồ sơ khách hàng
+              </h3>
+              <button
+                onClick={() => setShowForm(false)}
+                className="text-slate-400 hover:text-red-500 bg-slate-50 hover:bg-red-50 rounded-full p-2 transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
             <div className="p-6 overflow-y-auto">
@@ -439,7 +544,7 @@ const Users = () => {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-bold mb-2 text-slate-700">Số điện thoại</label>
                       <input
@@ -491,6 +596,44 @@ const Users = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+      {/* CONFIRM MODAL */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setConfirmModal(null)}></div>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative transform transition-all">
+            <div className="p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${confirmModal.type === 'status'
+                    ? (checkIsActive(confirmModal.customer) ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600')
+                    : (confirmModal.newRole === 'ADMIN' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600')
+                  }`}>
+                  {confirmModal.type === 'status' ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" /></svg>
+                  )}
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">{confirmModal.title}</h3>
+              </div>
+              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line mb-6">{confirmModal.message}</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setConfirmModal(null)}
+                  className="px-5 py-2.5 rounded-xl font-bold text-sm text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-all"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  onClick={handleConfirmAction}
+                  className={`px-5 py-2.5 rounded-xl font-bold text-sm text-white shadow-sm transition-all ${confirmModal.confirmColor}`}
+                >
+                  {confirmModal.confirmText}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

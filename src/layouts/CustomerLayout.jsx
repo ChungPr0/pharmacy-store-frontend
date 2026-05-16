@@ -13,7 +13,7 @@ export default function CustomerLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, token, getTotalItems, logout, fetchCart, authModal, openAuthModal, closeAuthModal } = useCart();
-  
+
   const [showPromo, setShowPromo] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
 
@@ -30,7 +30,7 @@ export default function CustomerLayout() {
         window.removeEventListener('cartUpdated', fetchCart);
       };
     }
-    
+
   }, [token]);
 
   useEffect(() => {
@@ -58,13 +58,13 @@ export default function CustomerLayout() {
       toast.error('Vui lòng nhập từ khóa tìm kiếm!');
       return;
     }
-    document.activeElement.blur(); 
+    document.activeElement.blur();
     navigate(`/search?keyword=${encodeURIComponent(searchKeyword.trim())}`);
   };
 
   return (
     <div className="min-h-screen bg-[#f8f9fa] font-sans text-gray-800 flex flex-col relative">
-      
+
       <style>
         {`@keyframes shrink-progress { 0% { width: 100%; } 100% { width: 0%; } }`}
       </style>
@@ -98,7 +98,7 @@ export default function CustomerLayout() {
 
       {/* HEADER CÂN ĐỐI (TỈ LỆ VÀNG) */}
       <div className="sticky top-0 z-50 w-full shadow-sm flex flex-col flex-shrink-0">
-        
+
         {/* THANH PROMO TRÊN CÙNG */}
         {showPromo && !token && (
           <div className="bg-[#2D982A] text-white relative flex justify-center items-center py-1 px-4">
@@ -116,7 +116,7 @@ export default function CustomerLayout() {
         {/* PHẦN HEADER CHÍNH */}
         <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm transition-all duration-300">
           <div className="w-full px-6 xl:px-12 py-3 flex items-center justify-between">
-            
+
             {/* LOGO */}
             <div className="flex-shrink-0 mr-8 cursor-pointer" onClick={() => navigate('/')}>
               <img src={IMAGES.LOGO_MAIN} alt="Logo" className="h-11 xl:h-12 object-contain hover:opacity-90 transition-opacity" />
@@ -148,17 +148,17 @@ export default function CustomerLayout() {
 
             {/* ACTION BUTTONS */}
             <div className="flex-shrink-0 flex items-center ml-6">
-              
+
               <div className="hidden xl:flex items-center space-x-2 mr-6 bg-green-50 px-4 py-2 rounded-full border border-green-100 cursor-pointer group hover:bg-green-100 transition-colors">
-                 <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#2D982A] shadow-sm group-hover:scale-110 transition-transform">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M1.5 4.5a3 3 0 013-3h1.372c.86 0 1.61.586 1.819 1.42l1.105 4.423a1.875 1.875 0 01-.694 1.955l-1.293.97c-.135.101-.164.249-.126.352a11.285 11.285 0 006.697 6.697c.103.038.25.009.352-.126l.97-1.293a1.875 1.875 0 011.955-.694l4.423 1.105c.834.209 1.42.959 1.42 1.82V19.5a3 3 0 01-3 3h-2.25C8.552 22.5 1.5 15.448 1.5 6.75V4.5z" clipRule="evenodd" /></svg>
-                 </div>
-                 <div className="flex flex-col leading-none">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Tư vấn miễn phí</span>
-                    <span className="text-[14px] font-black text-[#2D982A]">1800 29YY</span>
-                 </div>
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-[#2D982A] shadow-sm group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M1.5 4.5a3 3 0 013-3h1.372c.86 0 1.61.586 1.819 1.42l1.105 4.423a1.875 1.875 0 01-.694 1.955l-1.293.97c-.135.101-.164.249-.126.352a11.285 11.285 0 006.697 6.697c.103.038.25.009.352-.126l.97-1.293a1.875 1.875 0 011.955-.694l4.423 1.105c.834.209 1.42.959 1.42 1.82V19.5a3 3 0 01-3 3h-2.25C8.552 22.5 1.5 15.448 1.5 6.75V4.5z" clipRule="evenodd" /></svg>
+                </div>
+                <div className="flex flex-col leading-none">
+                  <span className="text-[10px] text-gray-500 font-bold uppercase mb-0.5">Tư vấn miễn phí</span>
+                  <span className="text-[14px] font-black text-[#2D982A]">1800 29YY</span>
+                </div>
               </div>
-              
+
               {user ? (
                 // KHỐI ĐÃ ĐĂNG NHẬP (CÓ AVATAR + DROPDOWN)
                 <div className="relative group flex items-center cursor-pointer py-1">
@@ -195,7 +195,7 @@ export default function CustomerLayout() {
                           <span>Lịch sử mua hàng</span>
                         </li>
                       )}
-                      
+
                       {isAdmin && (
                         <li onClick={() => navigate('/admin')} className="px-5 py-2.5 text-[13px] text-gray-700 hover:bg-green-50 hover:text-[#2D982A] cursor-pointer font-bold flex items-center space-x-3 transition-colors border-t border-gray-50">
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" /></svg>
@@ -214,7 +214,7 @@ export default function CustomerLayout() {
               ) : (
                 <div onClick={() => openAuthModal('login')} className="flex items-center space-x-2 cursor-pointer bg-gray-50 border border-gray-200 hover:border-[#2D982A] px-4 py-2 rounded-full transition-colors group">
                   <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center text-gray-400 group-hover:text-[#2D982A] shadow-sm transition-colors">
-                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path fillRule="evenodd" d="M7.5 6a4.5 4.5 0 119 0 4.5 4.5 0 01-9 0zM3.751 20.105a8.25 8.25 0 0116.498 0 .75.75 0 01-.437.695A18.683 18.683 0 0112 22.5c-2.786 0-5.433-.608-7.812-1.7a.75.75 0 01-.437-.695z" clipRule="evenodd" /></svg>
                   </div>
                   <span className="text-[13px] font-bold text-gray-700 group-hover:text-[#2D982A]">Đăng nhập</span>
                 </div>
@@ -226,10 +226,10 @@ export default function CustomerLayout() {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6" /></svg>
                     <div className="absolute top-full mt-2 w-max px-3 py-1.5 bg-gray-900 text-white text-[11px] font-bold rounded shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">Đơn hàng của bạn</div>
                   </button>
-                  
+
                   <button onClick={() => handleProtectedAction('/cart')} className="w-11 h-11 flex items-center justify-center bg-[#eef8ef] border border-green-200 text-[#2D982A] rounded-full hover:bg-[#2D982A] hover:text-white transition-all duration-300 shadow-sm relative group">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M2.25 2.25a.75.75 0 000 1.5h1.386c.17 0 .318.114.362.278l2.558 9.592a3.752 3.752 0 00-2.806 3.63c0 .414.336.75.75.75h15.75a.75.75 0 000-1.5H5.378A2.25 2.25 0 017.5 15h11.218a.75.75 0 00.674-.421 60.358 60.358 0 002.96-7.228.75.75 0 00-.525-.965A60.864 60.864 0 005.68 4.509l-.232-.867A1.875 1.875 0 003.636 2.25H2.25zM3.75 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0zM16.5 20.25a1.5 1.5 0 113 0 1.5 1.5 0 01-3 0z" /></svg>
-                    
+
                     {getTotalItems() > 0 && (
                       <span className="absolute -top-1.5 -right-1.5 bg-[#ef4444] text-white text-[10px] font-black w-[22px] h-[22px] flex items-center justify-center rounded-full shadow-sm border-2 border-white">
                         {getTotalItems()}
@@ -244,16 +244,16 @@ export default function CustomerLayout() {
         </header>
 
         {/* MENU THANH XANH */}
-         <nav className="bg-gradient-to-r from-[#2D982A] to-[#258022] text-white antialiased shadow-inner">
+        <nav className="bg-gradient-to-r from-[#2D982A] to-[#258022] text-white antialiased shadow-inner">
           <ul className="flex justify-center space-x-12 xl:space-x-20 py-3.5">
             {[
-              { name: 'THUỐC', slug: 'thuoc' }, 
-              { name: 'THỰC PHẨM CHỨC NĂNG', slug: 'thuc-pham-chuc-nang' }, 
-              { name: 'DƯỢC - MỸ PHẨM', slug: 'duoc-my-pham' }, 
+              { name: 'THUỐC', slug: 'thuoc' },
+              { name: 'THỰC PHẨM CHỨC NĂNG', slug: 'thuc-pham-chuc-nang' },
+              { name: 'DƯỢC - MỸ PHẨM', slug: 'duoc-my-pham' },
               { name: 'THIẾT BỊ Y TẾ', slug: 'thiet-bi-y-te' }
             ].map((item, index) => (
-              <li 
-                key={index} 
+              <li
+                key={index}
                 onClick={() => navigate(`/category/${item.slug}`)}
                 className="flex items-center space-x-2 cursor-pointer hover:text-green-100 transition-colors group relative"
               >
@@ -315,7 +315,7 @@ export default function CustomerLayout() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-white py-12 px-6 xl:px-16 w-full max-w-[1920px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-4 space-y-4">
             <img src={IMAGES.LOGO_MAIN} alt="Logo" className="h-16 object-contain mb-6" />
@@ -342,9 +342,9 @@ export default function CustomerLayout() {
           <div className="lg:col-span-3">
             <h3 className="font-bold text-[15px] text-[#2D982A] mb-4 uppercase">KẾT NỐI VỚI THÁI DƯƠNG</h3>
             <div className="flex space-x-4 mb-6">
-              <a href="https://www.facebook.com/profile.php?id=61574982612530&locale=vi_VN" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer hover:opacity-80 shadow-sm"><svg fill="white" viewBox="0 0 24 24" className="w-5 h-5"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
-              <a href="https://share.google/4oRHbZ3j7H0dPPQAB" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"><svg viewBox="0 0 24 24" className="w-5 h-5"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg></a>
-              <a href="https://zalo.me/0983149710" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"><svg viewBox="0 0 24 24" fill="#0068FF" className="w-6 h-6"><path d="M21.036 12c0-5.111-4.704-9.253-10.5-9.253C4.74 2.747 0 6.889 0 12c0 2.502 1.109 4.773 2.923 6.438-.179 1.636-.889 3.203-.925 3.359-.059.26.155.51.423.447 2.146-.499 4.254-1.634 5.393-2.378 1.16.326 2.404.502 3.722.502 5.796 0 10.5-4.142 10.5-9.253zm-14.83 2.222v-3.79c0-.283.21-.527.49-.554h2.529c.307 0 .556.25.556.558v.481c0 .307-.25.557-.556.557H7.728v.538h1.498c.306 0 .555.25.555.557v.48c0 .308-.25.557-.555.557H7.728v.636c0 .285-.211.53-.492.556H6.702c-.282-.026-.493-.27-.493-.556zm5.83-2.124h-1.57c-.308 0-.557-.25-.557-.557v-.481c0-.308.25-.558.557-.558h1.57c.308 0 .556.25.556.558v.481c0 .307-.25.557-.556.557zm-1.57 2.124h1.57c.308 0 .556-.25.556-.557v-.48c0-.307-.25-.557-.556-.557h-1.57c-.308 0-.557.25-.557.557v.48c0 .308.25.557.557.557zm4.195-2.124h-1.57c-.307 0-.556-.25-.556-.557v-.481c0-.308.25-.558.556-.558h1.57c.308 0 .557.25.557.558v.481c0 .307-.25.557-.557.557zm-1.57 2.124h1.57c.308 0 .557-.25.557-.557v-.48c0-.307-.25-.557-.557-.557h-1.57c-.307 0-.556.25-.556.557v.48c0 .308.25.557.556.557zm4.195-1.03c0 1.222-.996 2.213-2.222 2.213s-2.222-.99-2.222-2.213.996-2.213 2.222-2.213 2.222.99 2.222 2.213zm-1.111 0c0-.61-.497-1.106-1.111-1.106s-1.111.496-1.111 1.106.497 1.106 1.111 1.106 1.111-.496 1.111-1.106z"/></svg></a>
+              <a href="https://www.facebook.com/profile.php?id=61574982612530&locale=vi_VN" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer hover:opacity-80 shadow-sm"><svg fill="white" viewBox="0 0 24 24" className="w-5 h-5"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" /></svg></a>
+              <a href="https://share.google/4oRHbZ3j7H0dPPQAB" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"><svg viewBox="0 0 24 24" className="w-5 h-5"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg></a>
+              <a href="https://zalo.me/0983149710" target="_blank" rel="noopener noreferrer" className="w-8 h-8 rounded-full bg-white flex items-center justify-center cursor-pointer hover:bg-gray-50 shadow-sm border border-gray-100"><svg viewBox="0 0 24 24" fill="#0068FF" className="w-6 h-6"><path d="M21.036 12c0-5.111-4.704-9.253-10.5-9.253C4.74 2.747 0 6.889 0 12c0 2.502 1.109 4.773 2.923 6.438-.179 1.636-.889 3.203-.925 3.359-.059.26.155.51.423.447 2.146-.499 4.254-1.634 5.393-2.378 1.16.326 2.404.502 3.722.502 5.796 0 10.5-4.142 10.5-9.253zm-14.83 2.222v-3.79c0-.283.21-.527.49-.554h2.529c.307 0 .556.25.556.558v.481c0 .307-.25.557-.556.557H7.728v.538h1.498c.306 0 .555.25.555.557v.48c0 .308-.25.557-.555.557H7.728v.636c0 .285-.211.53-.492.556H6.702c-.282-.026-.493-.27-.493-.556zm5.83-2.124h-1.57c-.308 0-.557-.25-.557-.557v-.481c0-.308.25-.558.557-.558h1.57c.308 0 .556.25.556.558v.481c0 .307-.25.557-.556.557zm-1.57 2.124h1.57c.308 0 .556-.25.556-.557v-.48c0-.307-.25-.557-.556-.557h-1.57c-.308 0-.557.25-.557.557v.48c0 .308.25.557.557.557zm4.195-2.124h-1.57c-.307 0-.556-.25-.556-.557v-.481c0-.308.25-.558.556-.558h1.57c.308 0 .557.25.557.558v.481c0 .307-.25.557-.557.557zm-1.57 2.124h1.57c.308 0 .557-.25.557-.557v-.48c0-.307-.25-.557-.557-.557h-1.57c-.307 0-.556.25-.556.557v.48c0 .308.25.557.556.557zm4.195-1.03c0 1.222-.996 2.213-2.222 2.213s-2.222-.99-2.222-2.213.996-2.213 2.222-2.213 2.222.99 2.222 2.213zm-1.111 0c0-.61-.497-1.106-1.111-1.106s-1.111.496-1.111 1.106.497 1.106 1.111 1.106 1.111-.496 1.111-1.106z" /></svg></a>
             </div>
             <p className="text-[14px] text-gray-800 mb-6 flex items-center"><strong>Hotline:</strong> <span className="font-black text-[18px] text-black tracking-wide ml-2">1800 29YY</span></p>
           </div>
@@ -352,7 +352,7 @@ export default function CustomerLayout() {
         <div className="bg-[#2D982A] py-3 text-center w-full mt-auto">
           <p className="text-white text-[13px] font-medium">Copyright©</p>
         </div>
-        
+
       </footer>
     </div>
   );

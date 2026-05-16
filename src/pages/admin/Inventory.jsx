@@ -147,13 +147,16 @@ const Inventory = () => {
     let hasError = false;
     const validatedRows = importRows.map((row) => {
       let err = "";
+      const price = parseFloat(row.importPrice);
+      const qty = parseInt(row.stockQuantity, 10);
+
       if (!row.productId) err = "Vui lòng chọn sản phẩm hợp lệ từ danh sách.";
       else if (!row.batchNumber.trim()) err = "Số lô không được để trống.";
-      else if (!row.importPrice || row.importPrice < 0) err = "Giá nhập không hợp lệ.";
+      else if (isNaN(price) || price < 0) err = "Giá nhập không hợp lệ (phải là số >= 0).";
       else if (!row.manufactureDate) err = "Ngày sản xuất không được để trống.";
       else if (!row.expiryDate) err = "Hạn sử dụng không được để trống.";
       else if (new Date(row.manufactureDate) >= new Date(row.expiryDate)) err = "Ngày sản xuất phải trước HSD.";
-      else if (!row.stockQuantity || row.stockQuantity <= 0) err = "Số lượng phải > 0.";
+      else if (isNaN(qty) || qty <= 0) err = "Số lượng phải là số nguyên > 0.";
       
       if (err) hasError = true;
       return { ...row, error: err };
@@ -168,7 +171,7 @@ const Inventory = () => {
     const payload = {
       importNote: importNote.trim(),
       batches: importRows.map((row) => ({
-        productId: row.productId,
+        productId: Number(row.productId),
         batchNumber: row.batchNumber.trim(),
         importPrice: parseFloat(row.importPrice),
         manufactureDate: row.manufactureDate,
@@ -201,11 +204,12 @@ const Inventory = () => {
       setPageNo(0);
       fetchBatches();
     } catch (error) {
-      const errMsg = error.response?.data?.message || "Lỗi nhập kho";
+      console.error("Import error details:", error.response?.data);
+      const data = error.response?.data;
+      const errMsg = data?.message || data?.error || "Lỗi nhập kho";
       toast.error(errMsg);
       
       // Try to parse error message to highlight the specific row
-      // Example: "Ngày sản xuất không được lớn hơn hạn sử dụng (Lô: BATCH-0326-A1)."
       if (errMsg.includes("(Lô: ")) {
         const batchMatch = errMsg.match(/\(Lô:\s*(.*?)\)/);
         if (batchMatch && batchMatch[1]) {

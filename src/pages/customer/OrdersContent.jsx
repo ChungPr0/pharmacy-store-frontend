@@ -46,10 +46,24 @@ const getPaymentMethodText = (method) => {
     return method;
 };
 
-const OrderItem = ({ order, profileData }) => {
+const CANCEL_REASONS = [
+  "Tôi muốn thay đổi sản phẩm",
+  "Tôi muốn thay đổi địa chỉ giao hàng",
+  "Tôi tìm được giá tốt hơn ở nơi khác",
+  "Tôi không còn nhu cầu mua nữa",
+  "Đặt nhầm sản phẩm",
+  "Lý do khác"
+];
+
+const OrderItem = ({ order, profileData, onOrderCancelled }) => {
   const [expanded, setExpanded] = useState(false);
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [customReason, setCustomReason] = useState('');
+  const [cancelling, setCancelling] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(order.status);
 
   const handleToggle = async () => {
     if (!expanded && !details) {
@@ -68,6 +82,32 @@ const OrderItem = ({ order, profileData }) => {
       }
     }
     setExpanded(!expanded);
+  };
+
+  const canCancel = currentStatus === 'PENDING' || currentStatus === 'PAID';
+
+  const handleCancelOrder = async () => {
+    const reason = cancelReason === 'Lý do khác' ? customReason.trim() : cancelReason;
+    if (!reason) {
+      toast.error('Vui lòng chọn hoặc nhập lý do hủy đơn hàng!');
+      return;
+    }
+    setCancelling(true);
+    try {
+      const res = await api.put(`/orders/me/${order.orderCode}/cancel`, { cancelReason: reason });
+      if (res.data.status === 200) {
+        toast.success('Hủy đơn hàng thành công!');
+        setCurrentStatus('CANCELLED');
+        setShowCancelModal(false);
+        setCancelReason('');
+        setCustomReason('');
+        if (onOrderCancelled) onOrderCancelled(order.orderCode);
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Hủy đơn hàng thất bại!');
+    } finally {
+      setCancelling(false);
+    }
   };
 
   const handleExportPDF = async () => {
@@ -127,12 +167,55 @@ const OrderItem = ({ order, profileData }) => {
 
   return (
     <>
+      {/* MODAL XÁC NHẬN HỦY ĐƠN */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center backdrop-blur-sm" onClick={() => !cancelling && setShowCancelModal(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-[90%] max-w-[480px] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-red-500 to-rose-500 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-white font-bold text-[16px] flex items-center space-x-2">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                <span>Xác nhận hủy đơn hàng</span>
+              </h3>
+              <button onClick={() => setShowCancelModal(false)} disabled={cancelling} className="text-white/80 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            <div className="p-6 space-y-5">
+              <div className="bg-red-50 border border-red-100 rounded-xl p-4">
+                <p className="text-[14px] text-gray-800 font-medium">Bạn có chắc chắn muốn hủy đơn hàng <span className="font-black text-red-600">{order.orderCode}</span>?</p>
+                <p className="text-[12px] text-gray-500 mt-1">Hành động này không thể hoàn tác sau khi xác nhận.</p>
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-2">Lý do hủy đơn <span className="text-red-500">*</span></label>
+                <div className="space-y-2">
+                  {CANCEL_REASONS.map(reason => (
+                    <label key={reason} className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all ${cancelReason === reason ? 'border-red-400 bg-red-50' : 'border-gray-200 hover:border-red-200 hover:bg-red-50/30'}`}>
+                      <input type="radio" name="cancelReason" value={reason} checked={cancelReason === reason} onChange={e => setCancelReason(e.target.value)} className="w-4 h-4 accent-red-500 mr-3 cursor-pointer" />
+                      <span className="text-[13px] text-gray-800 font-medium">{reason}</span>
+                    </label>
+                  ))}
+                </div>
+                {cancelReason === 'Lý do khác' && (
+                  <textarea value={customReason} onChange={e => setCustomReason(e.target.value)} placeholder="Nhập lý do cụ thể của bạn..." rows={3} className="w-full mt-3 p-3 border border-gray-300 rounded-lg outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100 text-[13px] resize-none transition-all" />
+                )}
+              </div>
+              <div className="flex justify-end space-x-3 pt-3 border-t border-gray-100">
+                <button type="button" onClick={() => setShowCancelModal(false)} disabled={cancelling} className="px-6 py-2.5 rounded-xl border border-gray-300 text-gray-700 text-[13px] font-bold hover:bg-gray-50 transition-colors">Quay lại</button>
+                <button type="button" onClick={handleCancelOrder} disabled={cancelling || (!cancelReason || (cancelReason === 'Lý do khác' && !customReason.trim()))} className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-red-500 to-rose-500 text-white text-[13px] font-bold hover:from-red-600 hover:to-rose-600 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
+                  {cancelling ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Đang xử lý...</span></>) : (<><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg><span>Xác nhận hủy</span></>)}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:border-[#2D982A] transition-colors duration-300">
         <div className="p-5 flex flex-col md:flex-row md:items-center justify-between bg-gray-50/50">
           <div>
             <div className="flex items-center space-x-3 mb-1">
               <h3 className="font-bold text-[16px] text-gray-900">Đơn hàng: {order.orderCode}</h3>
-              {getStatusBadge(order.status)}
+              {getStatusBadge(currentStatus)}
             </div>
             <p className="text-[13px] text-gray-500">Ngày đặt: {formatDate(order.createdAt)}</p>
           </div>
@@ -141,6 +224,14 @@ const OrderItem = ({ order, profileData }) => {
               <p className="text-[12px] text-gray-500 mb-0.5">Tổng tiền (Gồm phí ship)</p>
               <p className="font-black text-[#d0021b] text-[16px]">{formatVND(orderTotal)}</p>
             </div>
+            {canCancel && (
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="px-5 py-2 border border-red-300 rounded-full text-[13px] font-bold text-red-500 hover:bg-red-500 hover:text-white hover:border-red-500 transition-all whitespace-nowrap"
+              >
+                Hủy đơn
+              </button>
+            )}
             <button 
               onClick={handleToggle}
               className="px-5 py-2 border border-gray-300 rounded-full text-[13px] font-bold text-gray-700 hover:bg-[#2D982A] hover:text-white hover:border-[#2D982A] transition-all whitespace-nowrap"
@@ -304,7 +395,7 @@ const OrderItem = ({ order, profileData }) => {
   );
 };
 
-export default function OrdersContent({ orders, profileData, onNavigate }) {
+export default function OrdersContent({ orders, profileData, onNavigate, onOrderCancelled }) {
   const [activeTab, setActiveTab] = useState('ALL');
   
   const TABS = [
@@ -342,7 +433,7 @@ export default function OrdersContent({ orders, profileData, onNavigate }) {
       {filteredOrders.length > 0 ? (
         <div className="space-y-6">
           {filteredOrders.map(order => (
-            <OrderItem key={order.id} order={order} profileData={profileData} />
+            <OrderItem key={order.id} order={order} profileData={profileData} onOrderCancelled={onOrderCancelled} />
           ))}
         </div>
       ) : (
